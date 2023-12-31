@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "Stepper.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -61,17 +61,6 @@ static void MX_TIM8_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void PWM_set_high_duration(TIM_TypeDef *timx, int us) {
-	int ccr = 16./25. * us;
-	timx->CCR1 = ccr;
-
-}
-
-void PWM_set_freq(TIM_TypeDef *timx, int hz) {
-	int arr = 16000000./(25*(float)hz);
-	timx->ARR = arr;
-}
-
 /* USER CODE END 0 */
 
 /**
@@ -107,20 +96,14 @@ int main(void)
   MX_TIM8_Init();
   /* USER CODE BEGIN 2 */
 
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1);
+  Stepper stepper1 = Stepper(htim1);
+  Stepper stepper2 = Stepper(htim4);
+  Stepper stepper3 = Stepper(htim8);
 
-//  TIM1->CCR1 = 16383;
-//  TIM1->ARR = 32000;
-  PWM_set_high_duration(TIM1, 10);
-  PWM_set_freq(TIM1, 3200);
 
-  PWM_set_high_duration(TIM4, 10);
-  PWM_set_freq(TIM4, 3200);
-
-  PWM_set_high_duration(TIM8, 10);
-  PWM_set_freq(TIM8, 3200);
+  stepper1.set_speed_step_freq(1000);
+  stepper2.set_speed_step_freq(500);
+  stepper3.set_speed_step_freq(200);
 
   /* USER CODE END 2 */
 
