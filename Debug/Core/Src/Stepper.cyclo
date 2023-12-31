@@ -1,6 +1,6 @@
 ../Core/Src/Stepper.cpp:11:6:void PWM_set_high_duration(TIM_TypeDef*, int)	1
 ../Core/Src/Stepper.cpp:16:6:void PWM_set_freq(TIM_TypeDef*, int)	1
-../Core/Src/Stepper.cpp:21:1:Stepper::Stepper(TIM_HandleTypeDef)	1
-../Core/Src/Stepper.cpp:30:6:void Stepper::set_speed_step_freq(int)	3
-../Core/Src/Stepper.cpp:42:1:Stepper::~Stepper()	1
-../Core/Src/Stepper.cpp:42:1:virtual Stepper::~Stepper()	1
+../Core/Src/Stepper.cpp:21:1:Stepper::Stepper(TIM_HandleTypeDef, GPIO_TypeDef*, uint16_t)	1
+../Core/Src/Stepper.cpp:32:6:void Stepper::set_speed_step_freq(int, int)	4
+../Core/Src/Stepper.cpp:50:1:Stepper::~Stepper()	1
+../Core/Src/Stepper.cpp:50:1:virtual Stepper::~Stepper()	1

@@ -96,14 +96,9 @@ int main(void)
   MX_TIM8_Init();
   /* USER CODE BEGIN 2 */
 
-  Stepper stepper1 = Stepper(htim1);
-  Stepper stepper2 = Stepper(htim4);
-  Stepper stepper3 = Stepper(htim8);
-
-
-  stepper1.set_speed_step_freq(1000);
-  stepper2.set_speed_step_freq(500);
-  stepper3.set_speed_step_freq(200);
+  Stepper stepper1 = Stepper(htim1, GPIOA, GPIO_PIN_0);
+//  Stepper stepper2 = Stepper(htim4);
+//  Stepper stepper3 = Stepper(htim8);
 
   /* USER CODE END 2 */
 
@@ -114,16 +109,15 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-      // LED ON
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-      HAL_Delay(1000);
-      // LED OFF
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET);
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
-      HAL_Delay(1000);
+	  stepper1.set_speed_step_freq(1000, 1);
+	  HAL_Delay(1000);
+	  stepper1.set_speed_step_freq(0, 1);
+	  HAL_Delay(1000);
+	  stepper1.set_speed_step_freq(1000, 0);
+	  HAL_Delay(1000);
+	  stepper1.set_speed_step_freq(0, 0);
+	  HAL_Delay(1000);
+
   }
   /* USER CODE END 3 */
 }
