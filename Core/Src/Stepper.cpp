@@ -15,6 +15,7 @@ void PWM_set_high_duration(TIM_TypeDef *timx, int us) {
 
 void PWM_set_freq(TIM_TypeDef *timx, int hz) {
 	int arr = 16000000./(25*(float)hz);
+	timx->CNT = 0;
 	timx->ARR = arr;
 }
 

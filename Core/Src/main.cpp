@@ -109,14 +109,27 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  stepper1.set_speed_step_freq(1000, 1);
-	  HAL_Delay(1000);
+//	  stepper1.set_speed_step_freq(1000, 1);
+//	  HAL_Delay(1000);
+//	  stepper1.set_speed_step_freq(0, 1);
+//	  HAL_Delay(1000);
+//	  stepper1.set_speed_step_freq(1000, 0);
+//	  HAL_Delay(1000);
+//	  stepper1.set_speed_step_freq(0, 0);
+//	  HAL_Delay(1000);
+	  int i = 0;
+	  for( i=0; i<10000; i+=100){
+		  stepper1.set_speed_step_freq(i, 1);
+		  HAL_Delay(1);
+	  }
+	  HAL_Delay(2000);
+	  for(i; i>0; i-=100){
+		  stepper1.set_speed_step_freq(i, 1);
+		  HAL_Delay(1);
+	  }
 	  stepper1.set_speed_step_freq(0, 1);
 	  HAL_Delay(1000);
-	  stepper1.set_speed_step_freq(1000, 0);
-	  HAL_Delay(1000);
-	  stepper1.set_speed_step_freq(0, 0);
-	  HAL_Delay(1000);
+
 
   }
   /* USER CODE END 3 */
