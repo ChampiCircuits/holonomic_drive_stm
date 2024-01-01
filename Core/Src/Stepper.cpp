@@ -48,6 +48,17 @@ void Stepper::set_speed_step_freq(int hz, int dir) {
 	}
 }
 
+void Stepper::set_speed_rps(float rps) {
+	// 3200 steps per revolution
+	int hz = rps * 3200.0;
+	if(hz>=0) {
+		this->set_speed_step_freq(hz, 1);
+	}
+	else {
+		this->set_speed_step_freq(-hz, 0);
+	}
+}
+
 Stepper::~Stepper() {
 	// TODO Auto-generated destructor stub
 }

@@ -14,6 +14,7 @@ class Stepper {
 public:
 	Stepper(TIM_HandleTypeDef tim_handle_step, GPIO_TypeDef *GPIOx_dir, uint16_t GPIO_Pin_dir);
 	void set_speed_step_freq(int hz, int dir);
+	void set_speed_rps(float rps);
 	virtual ~Stepper();
 
 private:

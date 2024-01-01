@@ -97,8 +97,13 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   Stepper stepper1 = Stepper(htim1, GPIOA, GPIO_PIN_0);
-//  Stepper stepper2 = Stepper(htim4);
-//  Stepper stepper3 = Stepper(htim8);
+  Stepper stepper2 = Stepper(htim4, GPIOA, GPIO_PIN_1);
+  Stepper stepper3 = Stepper(htim8, GPIOA, GPIO_PIN_4);
+
+  stepper1.set_speed_rps(1.5);
+  stepper2.set_speed_rps(0.5);
+  stepper3.set_speed_rps(4.0);
+
 
   /* USER CODE END 2 */
 
@@ -109,26 +114,26 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  stepper1.set_speed_step_freq(1000, 1);
-//	  HAL_Delay(1000);
+
+//	  int i = 0;
+//	  for( i=0; i<6000; i+=500){
+//		  stepper1.set_speed_step_freq(i, 1);
+//		  stepper2.set_speed_step_freq(i, 1);
+//		  stepper3.set_speed_step_freq(i, 1);
+//		  HAL_Delay(10);
+//	  }
+//	  HAL_Delay(2000);
+//	  for(; i>0; i-=100){
+//		  stepper1.set_speed_step_freq(i, 1);
+//		  stepper2.set_speed_step_freq(i, 1);
+//		  stepper3.set_speed_step_freq(i, 1);
+//		  HAL_Delay(1);
+//	  }
 //	  stepper1.set_speed_step_freq(0, 1);
+//	  stepper2.set_speed_step_freq(0, 1);
+//	  stepper3.set_speed_step_freq(0, 1);
 //	  HAL_Delay(1000);
-//	  stepper1.set_speed_step_freq(1000, 0);
-//	  HAL_Delay(1000);
-//	  stepper1.set_speed_step_freq(0, 0);
-//	  HAL_Delay(1000);
-	  int i = 0;
-	  for( i=0; i<10000; i+=100){
-		  stepper1.set_speed_step_freq(i, 1);
-		  HAL_Delay(1);
-	  }
-	  HAL_Delay(2000);
-	  for(i; i>0; i-=100){
-		  stepper1.set_speed_step_freq(i, 1);
-		  HAL_Delay(1);
-	  }
-	  stepper1.set_speed_step_freq(0, 1);
-	  HAL_Delay(1000);
+
 
 
   }

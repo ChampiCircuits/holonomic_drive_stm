@@ -2,5 +2,6 @@
 ../Core/Src/Stepper.cpp:16:6:void PWM_set_freq(TIM_TypeDef*, int)	24	static
 ../Core/Src/Stepper.cpp:22:1:Stepper::Stepper(TIM_HandleTypeDef, GPIO_TypeDef*, uint16_t)	16	static
 ../Core/Src/Stepper.cpp:33:6:void Stepper::set_speed_step_freq(int, int)	24	static
-../Core/Src/Stepper.cpp:51:1:Stepper::~Stepper()	16	static
-../Core/Src/Stepper.cpp:51:1:virtual Stepper::~Stepper()	16	static
+../Core/Src/Stepper.cpp:51:6:void Stepper::set_speed_rps(float)	24	static
+../Core/Src/Stepper.cpp:62:1:Stepper::~Stepper()	16	static
+../Core/Src/Stepper.cpp:62:1:virtual Stepper::~Stepper()	16	static
