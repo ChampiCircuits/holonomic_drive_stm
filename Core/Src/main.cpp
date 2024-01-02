@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Stepper.h"
+#include "HolonomicDrive3.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -100,9 +101,18 @@ int main(void)
   Stepper stepper2 = Stepper(htim4, GPIOA, GPIO_PIN_1);
   Stepper stepper3 = Stepper(htim8, GPIOA, GPIO_PIN_4);
 
-  stepper1.set_speed_rps(1.5);
-  stepper2.set_speed_rps(0.5);
-  stepper3.set_speed_rps(4.0);
+  HolonomicDrive3 holo_drive = HolonomicDrive3(stepper1, stepper2, stepper3, 0.029, 0.175);
+
+  CmdVel cmd = {};
+  cmd.y = 0.1822;
+//  cmd.theta = 20.0;
+
+  holo_drive.set_cmd_vel(cmd);
+  holo_drive.spin_once_motors_control();
+
+//  stepper1.set_speed_rps(1.5);
+//  stepper2.set_speed_rps(0.5);
+//  stepper3.set_speed_rps(4.0);
 
 
   /* USER CODE END 2 */

@@ -1,0 +1,7 @@
+../Core/Inc/HolonomicDrive3.h:14:8:constexpr CmdVel::CmdVel()	1
+../Core/Inc/Stepper.h:13:7:constexpr Stepper& Stepper::operator=(const Stepper&)	1
+../Core/Src/HolonomicDrive3.cpp:14:1:HolonomicDrive3::HolonomicDrive3(Stepper, Stepper, Stepper, float, float)	2
+../Core/Src/HolonomicDrive3.cpp:22:6:void HolonomicDrive3::set_cmd_vel(CmdVel)	1
+../Core/Src/HolonomicDrive3.cpp:26:6:void HolonomicDrive3::spin_once_motors_control()	1
+../Core/Src/HolonomicDrive3.cpp:40:1:HolonomicDrive3::~HolonomicDrive3()	3
+../Core/Src/HolonomicDrive3.cpp:40:1:virtual HolonomicDrive3::~HolonomicDrive3()	1
