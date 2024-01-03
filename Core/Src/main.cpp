@@ -101,14 +101,17 @@ int main(void)
   Stepper stepper2 = Stepper(htim4, GPIOA, GPIO_PIN_1);
   Stepper stepper3 = Stepper(htim8, GPIOA, GPIO_PIN_4);
 
-  HolonomicDrive3 holo_drive = HolonomicDrive3(stepper1, stepper2, stepper3, 0.029, 0.175);
+  HolonomicDrive3 holo_drive = HolonomicDrive3(stepper3, stepper1, stepper2, 0.029, 0.175);
 
-  CmdVel cmd = {};
-  cmd.y = 0.1822;
-//  cmd.theta = 20.0;
+  CmdVel cmd1 = {};
+  cmd1.x = 0.1;
+  CmdVel cmd2 = {};
+  cmd2.y = 0.1;
+  CmdVel cmd3 = {};
+  cmd3.x = -0.1;
+  CmdVel cmd4 = {};
+  cmd4.y = -0.1;
 
-  holo_drive.set_cmd_vel(cmd);
-  holo_drive.spin_once_motors_control();
 
 //  stepper1.set_speed_rps(1.5);
 //  stepper2.set_speed_rps(0.5);
@@ -124,6 +127,20 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+	  //  cmd.theta = 20.0;
+	  holo_drive.set_cmd_vel(cmd1);
+	  holo_drive.spin_once_motors_control();
+	  HAL_Delay(2000);
+	  holo_drive.set_cmd_vel(cmd2);
+	  holo_drive.spin_once_motors_control();
+	  HAL_Delay(2000);
+	  holo_drive.set_cmd_vel(cmd3);
+	  holo_drive.spin_once_motors_control();
+	  HAL_Delay(2000);
+	  holo_drive.set_cmd_vel(cmd4);
+	  holo_drive.spin_once_motors_control();
+	  HAL_Delay(2000);
 
 //	  int i = 0;
 //	  for( i=0; i<6000; i+=500){

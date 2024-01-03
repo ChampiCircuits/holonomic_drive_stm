@@ -26,7 +26,7 @@ void HolonomicDrive3::set_cmd_vel(CmdVel cmd) {
 void HolonomicDrive3::spin_once_motors_control() {
     float wheel0_mps = 0.5 * this->cmd_vel.x - SQRT_3_OVER_2 * this->cmd_vel.y - this->wheel_distance * this->cmd_vel.theta * PI / 180.0;
     float wheel1_mps = 0.5 * this->cmd_vel.x + SQRT_3_OVER_2 * this->cmd_vel.y - this->wheel_distance * this->cmd_vel.theta * PI / 180.0;
-    float wheel2_mps = this->cmd_vel.x - this->wheel_distance * this->cmd_vel.theta * PI / 180.0;
+    float wheel2_mps = - this->cmd_vel.x + this->wheel_distance * this->cmd_vel.theta * PI / 180.0;
     // wheel mps -> wheel rps
     float wheel0_rps = wheel0_mps / this->wheel_circumference;
     float wheel1_rps = wheel1_mps / this->wheel_circumference;

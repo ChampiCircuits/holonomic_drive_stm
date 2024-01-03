@@ -27,7 +27,7 @@ Stepper::Stepper(TIM_HandleTypeDef tim_handle_step, GPIO_TypeDef *GPIOx_dir, uin
 	this->GPIOx_dir = GPIOx_dir;
 	this->GPIO_Pin_dir = GPIO_Pin_dir;
 	PWM_set_high_duration(this->tim_handle.Instance, 10);
-	HAL_TIM_PWM_Stop(&this->tim_handle, TIM_CHANNEL_1);
+	HAL_GPIO_WritePin(this->GPIOx_dir, this->GPIO_Pin_dir, GPIO_PIN_SET);
 
 	this->current_dir = 0;
 	this->current_freq = 0;
