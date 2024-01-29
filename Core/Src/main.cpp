@@ -103,14 +103,18 @@ int main(void)
 
   HolonomicDrive3 holo_drive = HolonomicDrive3(stepper3, stepper1, stepper2, 0.029, 0.175);
 
-  CmdVel cmd1 = {};
-  cmd1.x = 0.1;
-  CmdVel cmd2 = {};
-  cmd2.y = 0.1;
-  CmdVel cmd3 = {};
-  cmd3.x = -0.1;
-  CmdVel cmd4 = {};
-  cmd4.y = -0.1;
+  float sp = 0.5;
+
+  Vel cmds[4];
+  cmds[0] = {};
+  cmds[0].x = sp;
+  cmds[1] = {};
+  cmds[1].y = sp;
+  cmds[2] = {};
+  cmds[2].x = -sp;
+  cmds[3] = {};
+  cmds[3].y = -sp;
+
 
 
 //  stepper1.set_speed_rps(1.5);
@@ -122,25 +126,34 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  uint32_t time_switch_cmd = 1000; //ms
+  int i_cmd = 0;
+
+  uint32_t last_time = HAL_GetTick();
+
+  holo_drive.set_cmd_vel(cmds[i_cmd]);
+
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 
-	  //  cmd.theta = 20.0;
-	  holo_drive.set_cmd_vel(cmd1);
+	  uint32_t current_time = HAL_GetTick();
+	  if(current_time-last_time > time_switch_cmd) {
+		  i_cmd += 1;
+		  if(i_cmd == 4) {
+			  i_cmd = 0;
+		  }
+		  last_time = current_time;
+
+		  holo_drive.set_cmd_vel(cmds[i_cmd]);
+	  }
+
 	  holo_drive.spin_once_motors_control();
-	  HAL_Delay(2000);
-	  holo_drive.set_cmd_vel(cmd2);
-	  holo_drive.spin_once_motors_control();
-	  HAL_Delay(2000);
-	  holo_drive.set_cmd_vel(cmd3);
-	  holo_drive.spin_once_motors_control();
-	  HAL_Delay(2000);
-	  holo_drive.set_cmd_vel(cmd4);
-	  holo_drive.spin_once_motors_control();
-	  HAL_Delay(2000);
+	  HAL_Delay(10);
+
 
 //	  int i = 0;
 //	  for( i=0; i<6000; i+=500){
