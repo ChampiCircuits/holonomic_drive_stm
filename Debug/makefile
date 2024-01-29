@@ -58,34 +58,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := test_stepper_control
+BUILD_ARTIFACT_NAME := holonomic_drive
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-test_stepper_control.elf \
+holonomic_drive.elf \
 
 MAP_FILES += \
-test_stepper_control.map \
+holonomic_drive.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-test_stepper_control.list \
+holonomic_drive.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: test_stepper_control.elf secondary-outputs
+main-build: holonomic_drive.elf secondary-outputs
 
 # Tool invocations
-test_stepper_control.elf test_stepper_control.map: $(OBJS) $(USER_OBJS) /home/arusso/STM32CubeIDE/workspace_1.14.0/test_stepper_control/STM32G431KBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "test_stepper_control.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/arusso/STM32CubeIDE/workspace_1.14.0/test_stepper_control/STM32G431KBTX_FLASH.ld" -Wl,-Map="test_stepper_control.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+holonomic_drive.elf holonomic_drive.map: $(OBJS) $(USER_OBJS) /home/arusso/STM32CubeIDE/workspace_1.14.0/holonomic_drive/STM32G431KBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "holonomic_drive.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/arusso/STM32CubeIDE/workspace_1.14.0/holonomic_drive/STM32G431KBTX_FLASH.ld" -Wl,-Map="holonomic_drive.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -94,14 +94,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-test_stepper_control.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "test_stepper_control.list"
+holonomic_drive.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "holonomic_drive.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) default.size.stdout test_stepper_control.elf test_stepper_control.list test_stepper_control.map
+	-$(RM) default.size.stdout holonomic_drive.elf holonomic_drive.list holonomic_drive.map
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
