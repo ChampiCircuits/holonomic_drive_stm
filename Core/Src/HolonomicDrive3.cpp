@@ -11,7 +11,15 @@
 #define SQRT_2_OVER_2 0.70710678118
 #define SQRT_3_OVER_2 0.86602540378
 
-#define MAX_AXEL_WHEEL 0.05 // a wheel can gain <value> rotation per update
+#define MAX_ACCEL_WHEEL 0.1 // rotation/s-2
+#define CONTROL_LOOP_FREQ_HZ 100. // Hz
+#define MAX_ACCEL_PER_CYCLE MAX_ACCEL_WHEEL / CONTROL_LOOP_FREQ_HZ // rotation/s/cycle
+/*
+ * MAX_ACCEL_PER_CYCLE, en rotation par seconde par cycle, est la vitesse maximale autorisée
+ * ajoutable à la vitesse actuelle d'une roue à chaque cycle. Soit : Combien peut-on ajouter de vitesse
+ * à une roue à chaque cycle de contrôle ?
+ */
+
 
 Vel sub(Vel vel1, Vel vel2) {
 	return {vel1.x - vel2.x, vel1.y - vel2.y, vel1.theta - vel2.theta};
@@ -82,33 +90,32 @@ void HolonomicDrive3::write_wheels_speeds(float *speeds_rps) {
 void HolonomicDrive3::spin_once_motors_control() {
 
 	// compare current_vel and cmd_vel wheels speeds to check the required acceleration to transition directly from current to command
-	float cmd_wheels_speeds_rps[3];
-	this->compute_wheels_speeds(cmd_vel, cmd_wheels_speeds_rps);
+	float cmd_wheels_speeds[3]; // rotations per second
+	this->compute_wheels_speeds(cmd_vel, cmd_wheels_speeds);
 
-	float cmd_sub_current_speeds[3];
-	sub(cmd_wheels_speeds_rps, this->current_wheels_speeds_rps, cmd_sub_current_speeds);
+	float desired_accels_wheels[3];
+	sub(cmd_wheels_speeds, this->current_wheels_speeds_rps, desired_accels_wheels);
 
-	float speeds_diff[3];
-	abs(cmd_sub_current_speeds, speeds_diff);
-	if(speeds_diff[0] < MAX_AXEL_WHEEL && speeds_diff[1] < MAX_AXEL_WHEEL && speeds_diff[2] < MAX_AXEL_WHEEL) {
+	float abs_desired_accels_wheels[3];
+	abs(desired_accels_wheels, abs_desired_accels_wheels);
+	if(abs_desired_accels_wheels[0] < MAX_ACCEL_PER_CYCLE && abs_desired_accels_wheels[1] < MAX_ACCEL_PER_CYCLE && abs_desired_accels_wheels[2] < MAX_ACCEL_PER_CYCLE) {
 		// acceleration requested is ok, no need to accelerate gradually.
-		this->write_wheels_speeds(cmd_wheels_speeds_rps);
+		this->write_wheels_speeds(cmd_wheels_speeds);
 	}
 	else {
-		// find max accel needed
-		int i_max = get_index_max(speeds_diff);
+		// Trouver la roue qui pose le + problème. On va alors pouvoir réduire les accélérations des 3 roues de façon
+		// de façon proportionelle, de façon que la roue qui pose le + problème ait une accélération égale à MAX_ACCEL_PER_CYCLE
+		int i_max = get_index_max(abs_desired_accels_wheels);
 
-		float speed_ratio = MAX_AXEL_WHEEL / speeds_diff[i_max]; // speed ratio of each original speed to add
+		float speed_ratio = MAX_ACCEL_PER_CYCLE / desired_accels_wheels[i_max]; // speed ratio of each original speed to add
 
 		float new_speeds_cmds[3];
 		for(int i=0; i<3; i++) {
-			new_speeds_cmds[i] = current_wheels_speeds_rps[i] + speed_ratio * cmd_sub_current_speeds[i];;
+			new_speeds_cmds[i] = current_wheels_speeds_rps[i] + speed_ratio * desired_accels_wheels[i];;
 		}
 
 		// set speed
 		this->write_wheels_speeds(new_speeds_cmds);
-
-		// todo documenter les equations
 
 
 	}

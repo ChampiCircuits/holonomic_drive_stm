@@ -7,14 +7,16 @@
 
 #include "Stepper.h"
 
+#define SYS_CORE_CLOCK_HZ 16000000.
+#define SYS_CORE_CLOCK_MHZ 16.
+
 
 void PWM_set_high_duration(TIM_TypeDef *timx, int us) {
-	int ccr = 16./25. * us;
-	timx->CCR1 = ccr;
+	timx->CCR1 = SYS_CORE_CLOCK_MHZ/timx->PSC * us;
 }
 
 void PWM_set_freq(TIM_TypeDef *timx, int hz) {
-	int arr = 16000000./(25*(float)hz);
+	int arr = SYS_CORE_CLOCK_HZ/(timx->PSC*hz);
 	timx->CNT = 0;
 	timx->ARR = arr;
 }

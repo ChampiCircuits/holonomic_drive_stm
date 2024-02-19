@@ -5,4 +5,4 @@
 ../Core/Src/main.cpp:310:13:void MX_TIM4_Init()	6
 ../Core/Src/main.cpp:369:13:void MX_TIM8_Init()	7
 ../Core/Src/main.cpp:451:13:void MX_GPIO_Init()	1
-../Core/Src/main.cpp:482:6:void Error_Handler()	1
+../Core/Src/main.cpp:489:6:void Error_Handler()	1

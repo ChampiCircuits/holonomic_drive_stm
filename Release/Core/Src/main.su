@@ -1,0 +1,4 @@
+../Core/Inc/Stepper.h:13:7:constexpr Stepper::Stepper(const Stepper&)	16	static
+../Core/Src/main.cpp:187:6:void SystemClock_Config()	88	static,ignoring_inline_asm
+../Core/Src/main.cpp:71:5:int main()	1008	static,ignoring_inline_asm
+../Core/Src/main.cpp:489:6:void Error_Handler()	0	static,ignoring_inline_asm
