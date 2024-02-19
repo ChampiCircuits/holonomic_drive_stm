@@ -1257,27 +1257,27 @@ Disassembly of section .text:
  8000fd0:	b5f8      	push	{r3, r4, r5, r6, r7, lr}
  8000fd2:	4604      	mov	r4, r0
  8000fd4:	6a80      	ldr	r0, [r0, #40]	; 0x28
- 8000fd6:	460d      	mov	r5, r1
- 8000fd8:	f7ff fa60 	bl	800049c <__aeabi_ui2d>
- 8000fdc:	4602      	mov	r2, r0
- 8000fde:	460b      	mov	r3, r1
- 8000fe0:	2000      	movs	r0, #0
- 8000fe2:	4909      	ldr	r1, [pc, #36]	; (8001008 <_Z21PWM_set_high_durationP11TIM_TypeDefi+0x38>)
- 8000fe4:	f7ff fbfe 	bl	80007e4 <__aeabi_ddiv>
- 8000fe8:	4606      	mov	r6, r0
- 8000fea:	4628      	mov	r0, r5
- 8000fec:	460f      	mov	r7, r1
- 8000fee:	f7ff fa65 	bl	80004bc <__aeabi_i2d>
- 8000ff2:	4602      	mov	r2, r0
- 8000ff4:	460b      	mov	r3, r1
- 8000ff6:	4630      	mov	r0, r6
- 8000ff8:	4639      	mov	r1, r7
- 8000ffa:	f7ff fac9 	bl	8000590 <__aeabi_dmul>
- 8000ffe:	f7ff fd89 	bl	8000b14 <__aeabi_d2uiz>
- 8001002:	6360      	str	r0, [r4, #52]	; 0x34
- 8001004:	bdf8      	pop	{r3, r4, r5, r6, r7, pc}
- 8001006:	bf00      	nop
- 8001008:	40300000 	.word	0x40300000
+ 8000fd6:	3001      	adds	r0, #1
+ 8000fd8:	460d      	mov	r5, r1
+ 8000fda:	f7ff fa5f 	bl	800049c <__aeabi_ui2d>
+ 8000fde:	4602      	mov	r2, r0
+ 8000fe0:	460b      	mov	r3, r1
+ 8000fe2:	2000      	movs	r0, #0
+ 8000fe4:	4908      	ldr	r1, [pc, #32]	; (8001008 <_Z21PWM_set_high_durationP11TIM_TypeDefi+0x38>)
+ 8000fe6:	f7ff fbfd 	bl	80007e4 <__aeabi_ddiv>
+ 8000fea:	4606      	mov	r6, r0
+ 8000fec:	4628      	mov	r0, r5
+ 8000fee:	460f      	mov	r7, r1
+ 8000ff0:	f7ff fa64 	bl	80004bc <__aeabi_i2d>
+ 8000ff4:	4602      	mov	r2, r0
+ 8000ff6:	460b      	mov	r3, r1
+ 8000ff8:	4630      	mov	r0, r6
+ 8000ffa:	4639      	mov	r1, r7
+ 8000ffc:	f7ff fac8 	bl	8000590 <__aeabi_dmul>
+ 8001000:	f7ff fd88 	bl	8000b14 <__aeabi_d2uiz>
+ 8001004:	6360      	str	r0, [r4, #52]	; 0x34
+ 8001006:	bdf8      	pop	{r3, r4, r5, r6, r7, pc}
+ 8001008:	40654000 	.word	0x40654000
  800100c:	00000000 	.word	0x00000000
 
 08001010 <_Z12PWM_set_freqP11TIM_TypeDefi>:
@@ -1286,19 +1286,18 @@ Disassembly of section .text:
  8001014:	6a80      	ldr	r0, [r0, #40]	; 0x28
  8001016:	2300      	movs	r3, #0
  8001018:	6263      	str	r3, [r4, #36]	; 0x24
- 800101a:	4348      	muls	r0, r1
- 800101c:	f7ff fa3e 	bl	800049c <__aeabi_ui2d>
- 8001020:	4602      	mov	r2, r0
- 8001022:	460b      	mov	r3, r1
- 8001024:	a104      	add	r1, pc, #16	; (adr r1, 8001038 <_Z12PWM_set_freqP11TIM_TypeDefi+0x28>)
- 8001026:	e9d1 0100 	ldrd	r0, r1, [r1]
- 800102a:	f7ff fbdb 	bl	80007e4 <__aeabi_ddiv>
- 800102e:	f7ff fd49 	bl	8000ac4 <__aeabi_d2iz>
- 8001032:	62e0      	str	r0, [r4, #44]	; 0x2c
- 8001034:	bd10      	pop	{r4, pc}
- 8001036:	bf00      	nop
+ 800101a:	fb00 1001 	mla	r0, r0, r1, r1
+ 800101e:	f7ff fa3d 	bl	800049c <__aeabi_ui2d>
+ 8001022:	4602      	mov	r2, r0
+ 8001024:	460b      	mov	r3, r1
+ 8001026:	a104      	add	r1, pc, #16	; (adr r1, 8001038 <_Z12PWM_set_freqP11TIM_TypeDefi+0x28>)
+ 8001028:	e9d1 0100 	ldrd	r0, r1, [r1]
+ 800102c:	f7ff fbda 	bl	80007e4 <__aeabi_ddiv>
+ 8001030:	f7ff fd48 	bl	8000ac4 <__aeabi_d2iz>
+ 8001034:	62e0      	str	r0, [r4, #44]	; 0x2c
+ 8001036:	bd10      	pop	{r4, pc}
  8001038:	00000000 	.word	0x00000000
- 800103c:	416e8480 	.word	0x416e8480
+ 800103c:	41a443fd 	.word	0x41a443fd
 
 08001040 <_ZN7StepperC1Ev>:
  8001040:	4b01      	ldr	r3, [pc, #4]	; (8001048 <_ZN7StepperC1Ev+0x8>)
