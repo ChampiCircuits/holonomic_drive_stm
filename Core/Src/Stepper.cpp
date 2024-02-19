@@ -23,11 +23,12 @@ void PWM_set_freq(TIM_TypeDef *timx, int hz) {
 
 Stepper::Stepper() {}
 
-Stepper::Stepper(TIM_HandleTypeDef tim_handle_step, GPIO_TypeDef *GPIOx_dir, uint16_t GPIO_Pin_dir) {
+Stepper::Stepper(TIM_HandleTypeDef tim_handle_step, uint32_t tim_channel_step, GPIO_TypeDef *GPIOx_dir, uint16_t GPIO_Pin_dir) {
 	// TODO Auto-generated constructor stub
 	this->tim_handle = tim_handle_step;
 	this->GPIOx_dir = GPIOx_dir;
 	this->GPIO_Pin_dir = GPIO_Pin_dir;
+	this->tim_channel = tim_channel_step;
 	PWM_set_high_duration(this->tim_handle.Instance, 10);
 	HAL_GPIO_WritePin(this->GPIOx_dir, this->GPIO_Pin_dir, GPIO_PIN_SET);
 
@@ -37,12 +38,12 @@ Stepper::Stepper(TIM_HandleTypeDef tim_handle_step, GPIO_TypeDef *GPIOx_dir, uin
 
 void Stepper::set_speed_step_freq(int hz, int dir) {
 	if(hz < 15){// todo calculer freq min automatiquement
-		HAL_TIM_PWM_Stop(&this->tim_handle, TIM_CHANNEL_1);
+		HAL_TIM_PWM_Stop(&this->tim_handle, this->tim_channel);
 		return;
 	}
 	if(!this->current_freq) {
 		// stepper stopped, start pwm
-		HAL_TIM_PWM_Start(&this->tim_handle, TIM_CHANNEL_1);
+		HAL_TIM_PWM_Start(&this->tim_handle, this->tim_channel);
 	}
 	PWM_set_freq(this->tim_handle.Instance, hz);
 
