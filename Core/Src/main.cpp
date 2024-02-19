@@ -23,6 +23,9 @@
 /* USER CODE BEGIN Includes */
 #include "Stepper.h"
 #include "HolonomicDrive3.h"
+
+#include "MessageRecomposer.h"
+#include "ChampiCan.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,6 +44,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+FDCAN_HandleTypeDef hfdcan1;
+
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim6;
@@ -68,6 +73,7 @@ static void MX_TIM1_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_TIM6_Init(void);
+static void MX_FDCAN1_Init(void);
 /* USER CODE BEGIN PFP */
 void loop();
 /* USER CODE END PFP */
@@ -135,6 +141,7 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM8_Init();
   MX_TIM6_Init();
+  MX_FDCAN1_Init();
   /* USER CODE BEGIN 2 */
 
   stepper0 = Stepper(htim8, GPIOA, GPIO_PIN_4);
@@ -143,8 +150,15 @@ int main(void)
 
   holo_drive = HolonomicDrive3(stepper0, stepper1, stepper2, 0.029, 0.175);
 
+  ChampiCan champi_can = ChampiCan(&hfdcan1);
+
+
+  if(champi_can.start() != 0) {
+	  Error_Handler();
+  }
+
   set_loop_freq(100);
-  HAL_TIM_Base_Start_IT(&htim6);
+//  HAL_TIM_Base_Start_IT(&htim6);
 
   float sp = 0.5;
 
@@ -168,14 +182,24 @@ int main(void)
 
   last_time = HAL_GetTick();
 
-  holo_drive.set_cmd_vel(cmds[i_cmd]);
+  //holo_drive.set_cmd_vel(cmds[i_cmd]);
 
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  char msg[4] = "abc";
+      //if (champi_can.send_frame(0x123, TxData, 8) !=0)
+	  if (champi_can.send_msg(0x123, (uint8_t*) msg, 3) !=0)
+      {
+        /* Transmission request Error */
+    	  printf("ERROR: msg not sent\n");
+    	  Error_Handler();
+      }
 
+	  printf("msg sent\n");
+	  HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }
@@ -224,6 +248,49 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief FDCAN1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_FDCAN1_Init(void)
+{
+
+  /* USER CODE BEGIN FDCAN1_Init 0 */
+
+  /* USER CODE END FDCAN1_Init 0 */
+
+  /* USER CODE BEGIN FDCAN1_Init 1 */
+
+  /* USER CODE END FDCAN1_Init 1 */
+  hfdcan1.Instance = FDCAN1;
+  hfdcan1.Init.ClockDivider = FDCAN_CLOCK_DIV1;
+  hfdcan1.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
+  hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
+  hfdcan1.Init.AutoRetransmission = ENABLE;
+  hfdcan1.Init.TransmitPause = DISABLE;
+  hfdcan1.Init.ProtocolException = DISABLE;
+  hfdcan1.Init.NominalPrescaler = 10;
+  hfdcan1.Init.NominalSyncJumpWidth = 1;
+  hfdcan1.Init.NominalTimeSeg1 = 14;
+  hfdcan1.Init.NominalTimeSeg2 = 2;
+  hfdcan1.Init.DataPrescaler = 10;
+  hfdcan1.Init.DataSyncJumpWidth = 1;
+  hfdcan1.Init.DataTimeSeg1 = 14;
+  hfdcan1.Init.DataTimeSeg2 = 2;
+  hfdcan1.Init.StdFiltersNbr = 0;
+  hfdcan1.Init.ExtFiltersNbr = 0;
+  hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
+  if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN FDCAN1_Init 2 */
+
+  /* USER CODE END FDCAN1_Init 2 */
+
 }
 
 /**
@@ -356,7 +423,7 @@ static void MX_TIM4_Init(void)
   sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -500,6 +567,7 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4|GPIO_PIN_7, GPIO_PIN_RESET);
