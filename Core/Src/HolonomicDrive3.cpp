@@ -11,15 +11,16 @@
 #define SQRT_2_OVER_2 0.70710678118
 #define SQRT_3_OVER_2 0.86602540378
 
-#define MAX_ACCEL_WHEEL 0.1 // rotation/s-2
+#define MAX_ACCEL_WHEEL 10.0 // rotation/s-2
 #define CONTROL_LOOP_FREQ_HZ 100. // Hz
-#define MAX_ACCEL_PER_CYCLE MAX_ACCEL_WHEEL / CONTROL_LOOP_FREQ_HZ // rotation/s/cycle
+#define MAX_ACCEL_PER_CYCLE 0.1 // rotation/s/cycle
 /*
  * MAX_ACCEL_PER_CYCLE, en rotation par seconde par cycle, est la vitesse maximale autorisée
  * ajoutable à la vitesse actuelle d'une roue à chaque cycle. Soit : Combien peut-on ajouter de vitesse
  * à une roue à chaque cycle de contrôle ?
  */
 
+#define MAX_AXEL_WHEEL 0.1 // a wheel can gain <value> rotation per update
 
 Vel sub(Vel vel1, Vel vel2) {
 	return {vel1.x - vel2.x, vel1.y - vel2.y, vel1.theta - vel2.theta};
@@ -107,7 +108,7 @@ void HolonomicDrive3::spin_once_motors_control() {
 		// de façon proportionelle, de façon que la roue qui pose le + problème ait une accélération égale à MAX_ACCEL_PER_CYCLE
 		int i_max = get_index_max(abs_desired_accels_wheels);
 
-		float speed_ratio = MAX_ACCEL_PER_CYCLE / desired_accels_wheels[i_max]; // speed ratio of each original speed to add
+		float speed_ratio = MAX_ACCEL_PER_CYCLE / abs_desired_accels_wheels[i_max]; // speed ratio of each original speed to add
 
 		float new_speeds_cmds[3];
 		for(int i=0; i<3; i++) {
@@ -122,6 +123,8 @@ void HolonomicDrive3::spin_once_motors_control() {
 
 }
 
+HolonomicDrive3::HolonomicDrive3() {
+}
 
 HolonomicDrive3::~HolonomicDrive3() {
 	// TODO Auto-generated destructor stub

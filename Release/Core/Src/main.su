@@ -1,4 +1,10 @@
+../Core/Inc/Stepper.h:13:7:constexpr Stepper& Stepper::operator=(const Stepper&)	16	static
+../Core/Src/main.cpp:87:6:void set_loop_freq(int)	24	static
+../Core/Src/main.cpp:91:6:void loop()	8	static
+../Core/Src/main.cpp:79:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	0	static
 ../Core/Inc/Stepper.h:13:7:constexpr Stepper::Stepper(const Stepper&)	16	static
-../Core/Src/main.cpp:187:6:void SystemClock_Config()	88	static,ignoring_inline_asm
-../Core/Src/main.cpp:71:5:int main()	1008	static,ignoring_inline_asm
-../Core/Src/main.cpp:489:6:void Error_Handler()	0	static,ignoring_inline_asm
+../Core/Src/main.cpp:212:6:void SystemClock_Config()	88	static,ignoring_inline_asm
+../Core/Src/main.cpp:558:6:void Error_Handler()	0	static,ignoring_inline_asm
+../Core/Src/main.cpp:567:1:cpp)	8	static
+../Core/Src/main.cpp:111:5:int main()	720	static,ignoring_inline_asm
+../Core/Src/main.cpp:567:1:cpp)	8	static

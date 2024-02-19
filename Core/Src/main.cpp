@@ -32,7 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define SYS_CORE_CLOCK_HZ 170000000.
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -43,9 +43,21 @@
 /* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim8;
 
 /* USER CODE BEGIN PV */
+
+Stepper stepper0;
+Stepper stepper1;
+Stepper stepper2;
+
+HolonomicDrive3 holo_drive;
+
+uint32_t last_time;
+uint32_t time_switch_cmd; //ms
+int i_cmd;
+Vel cmds[4];
 
 /* USER CODE END PV */
 
@@ -55,13 +67,40 @@ static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM8_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
-
+void loop();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
+{
+    if(htim->Instance == TIM6) {
+    	loop();
+    }
+
+}
+
+void set_loop_freq(int hz) {
+	htim6.Instance->ARR = SYS_CORE_CLOCK_HZ / (htim6.Instance->PSC+1) / hz;
+}
+
+void loop() {
+	uint32_t current_time = HAL_GetTick();
+	if(current_time-last_time > time_switch_cmd) {
+		i_cmd += 1;
+		if(i_cmd == 4) {
+			i_cmd = 0;
+		}
+		last_time = current_time;
+
+		holo_drive.set_cmd_vel(cmds[i_cmd]);
+	}
+
+	holo_drive.spin_once_motors_control();
+}
 /* USER CODE END 0 */
 
 /**
@@ -95,17 +134,20 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM4_Init();
   MX_TIM8_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
-  Stepper stepper1 = Stepper(htim1, GPIOA, GPIO_PIN_0);
-  Stepper stepper2 = Stepper(htim4, GPIOA, GPIO_PIN_1);
-  Stepper stepper3 = Stepper(htim8, GPIOA, GPIO_PIN_4);
+  stepper0 = Stepper(htim8, GPIOA, GPIO_PIN_4);
+  stepper1 = Stepper(htim1, GPIOA, GPIO_PIN_0);
+  stepper2 = Stepper(htim4, GPIOA, GPIO_PIN_1);
 
-  HolonomicDrive3 holo_drive = HolonomicDrive3(stepper3, stepper1, stepper2, 0.029, 0.175);
+  holo_drive = HolonomicDrive3(stepper0, stepper1, stepper2, 0.029, 0.175);
+
+  set_loop_freq(100);
+  HAL_TIM_Base_Start_IT(&htim6);
 
   float sp = 0.5;
 
-  Vel cmds[4];
   cmds[0] = {};
   cmds[0].x = sp;
   cmds[1] = {};
@@ -116,21 +158,15 @@ int main(void)
   cmds[3].y = -sp;
 
 
-
-//  stepper1.set_speed_rps(1.5);
-//  stepper2.set_speed_rps(0.5);
-//  stepper3.set_speed_rps(4.0);
-
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  uint32_t time_switch_cmd = 1000; //ms
-  int i_cmd = 0;
+  time_switch_cmd = 1000; //ms
+  i_cmd = 0;
 
-  uint32_t last_time = HAL_GetTick();
+  last_time = HAL_GetTick();
 
   holo_drive.set_cmd_vel(cmds[i_cmd]);
 
@@ -139,42 +175,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-	  uint32_t current_time = HAL_GetTick();
-	  if(current_time-last_time > time_switch_cmd) {
-		  i_cmd += 1;
-		  if(i_cmd == 4) {
-			  i_cmd = 0;
-		  }
-		  last_time = current_time;
-
-		  holo_drive.set_cmd_vel(cmds[i_cmd]);
-	  }
-
-	  holo_drive.spin_once_motors_control();
-	  HAL_Delay(10);
-
-
-//	  int i = 0;
-//	  for( i=0; i<6000; i+=500){
-//		  stepper1.set_speed_step_freq(i, 1);
-//		  stepper2.set_speed_step_freq(i, 1);
-//		  stepper3.set_speed_step_freq(i, 1);
-//		  HAL_Delay(10);
-//	  }
-//	  HAL_Delay(2000);
-//	  for(; i>0; i-=100){
-//		  stepper1.set_speed_step_freq(i, 1);
-//		  stepper2.set_speed_step_freq(i, 1);
-//		  stepper3.set_speed_step_freq(i, 1);
-//		  HAL_Delay(1);
-//	  }
-//	  stepper1.set_speed_step_freq(0, 1);
-//	  stepper2.set_speed_step_freq(0, 1);
-//	  stepper3.set_speed_step_freq(0, 1);
-//	  HAL_Delay(1000);
-
-
 
   }
   /* USER CODE END 3 */
@@ -191,7 +191,7 @@ void SystemClock_Config(void)
 
   /** Configure the main internal regulator output voltage
   */
-  HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
+  HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1_BOOST);
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -199,7 +199,13 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV4;
+  RCC_OscInitStruct.PLL.PLLN = 85;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -209,12 +215,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
   {
     Error_Handler();
   }
@@ -241,7 +247,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 24;
+  htim1.Init.Prescaler = 260;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim1.Init.Period = 65535;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -322,7 +328,7 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 24;
+  htim4.Init.Prescaler = 260;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 65535;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -362,6 +368,44 @@ static void MX_TIM4_Init(void)
 }
 
 /**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 100;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 65535;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
+
+}
+
+/**
   * @brief TIM8 Initialization Function
   * @param None
   * @retval None
@@ -382,7 +426,7 @@ static void MX_TIM8_Init(void)
 
   /* USER CODE END TIM8_Init 1 */
   htim8.Instance = TIM8;
-  htim8.Init.Prescaler = 24;
+  htim8.Init.Prescaler = 260;
   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim8.Init.Period = 65535;
   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;

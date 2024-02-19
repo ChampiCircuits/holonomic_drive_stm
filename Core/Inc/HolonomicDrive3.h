@@ -19,6 +19,7 @@ struct Vel {
 
 class HolonomicDrive3 {
 public:
+	HolonomicDrive3();
 	HolonomicDrive3(Stepper stepper0, Stepper stepper1, Stepper stepper2, float wheel_radius, float wheel_distance);
 	void set_cmd_vel(Vel cmd);
 	void write_wheels_speeds(float* speeds_rps);
