@@ -62,14 +62,7 @@ Stepper stepper1;
 Stepper stepper2;
 
 HolonomicDrive3 holo_drive;
-int i_cmd;
-Vel cmds[4];
-MessageRecomposer msg_recomposer_123;
-
-uint32_t last_time;
-uint32_t time_switch_cmd; //ms
-
-Vel cmd_vel;
+MessageRecomposer msg_recomposer_cmd_vel;
 
 /* USER CODE END PV */
 
@@ -83,6 +76,7 @@ static void MX_FDCAN1_Init(void);
 static void MX_TIM15_Init(void);
 /* USER CODE BEGIN PFP */
 void loop();
+void on_receive_cmd_vel(std::string proto_msg);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -112,40 +106,43 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 		FDCAN_RxHeaderTypeDef RxHeader;
 		uint8_t RxData[8];
 
-		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
-		{
+		if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK) {
 			printf("error rx\n");
 			Error_Handler();
 		}
+		/* Handle Interesting messages
+		 * Pour le moment, on n'utilise pas de mutex ou de choses comme ça, donc il faut faire attention
+		 * à ne pas modifier trop de variables partagées, et de priviligier la modifcation de variables
+		 * de 32 bits ou moins (pour que leur modification soit une opération atomique)
+		 * */
 
-		if ((RxHeader.Identifier == 0x10) && (RxHeader.IdType == FDCAN_STANDARD_ID))
-		{
-			msg_recomposer_123.add_frame(RxData, RxHeader.DataLength);
+		if (RxHeader.Identifier == 0x10) {
+			msg_recomposer_cmd_vel.add_frame(RxData, RxHeader.DataLength);
 
-			if(msg_recomposer_123.check_if_new_full_msg()) {
-				std::string full_msg = msg_recomposer_123.get_full_msg();
-				printf("got full msg : %s\n", full_msg.c_str());
-
-				// Allocate space for the decoded message.
-				msgs_can_BaseVel ret_base_vel = msgs_can_BaseVel_init_zero;
-
-				  // Create a stream that reads from the buffer.
-				pb_istream_t stream_ret = pb_istream_from_buffer((const unsigned char*)full_msg.c_str(), full_msg.size());
-
-				  // Now we are ready to decode the message.
-				 if (!pb_decode(&stream_ret, msgs_can_BaseVel_fields, &ret_base_vel)) {
-					 printf("Decoding failed: %s\n", PB_GET_ERROR(&stream_ret));
-					 Error_Handler();
-				 }
-
-				 cmd_vel = {ret_base_vel.x, ret_base_vel.y, ret_base_vel.theta};
-
-				 holo_drive.set_cmd_vel(cmd_vel);
-
+			if(msg_recomposer_cmd_vel.check_if_new_full_msg()) {
+				std::string proto_msg = msg_recomposer_cmd_vel.get_full_msg();
+				on_receive_cmd_vel(proto_msg);
 
 			}
 		}
 	}
+}
+
+void on_receive_cmd_vel(std::string proto_msg) {
+
+	// Allocate space for the decoded message.
+	msgs_can_BaseVel ret_cmd_vel = msgs_can_BaseVel_init_zero;
+	  // Create a stream that reads from the buffer.
+	pb_istream_t stream_ret = pb_istream_from_buffer((const unsigned char*)proto_msg.c_str(), proto_msg.size());
+	  // Now we are ready to decode the message.
+	 if (!pb_decode(&stream_ret, msgs_can_BaseVel_fields, &ret_cmd_vel)) {
+		 printf("Decoding failed: %s\n", PB_GET_ERROR(&stream_ret));
+		 Error_Handler();
+	 }
+
+	// Use message
+	Vel cmd_vel = {ret_cmd_vel.x, ret_cmd_vel.y, ret_cmd_vel.theta};
+	holo_drive.set_cmd_vel(cmd_vel);
 }
 
 void set_loop_freq(int hz) {
@@ -153,18 +150,11 @@ void set_loop_freq(int hz) {
 }
 
 void loop() {
-//	uint32_t current_time = HAL_GetTick();
-//	if(current_time-last_time > time_switch_cmd) {
-//		i_cmd += 1;
-//		if(i_cmd == 4) {
-//			i_cmd = 0;
-//		}
-//		last_time = current_time;
-//
-//		holo_drive.set_cmd_vel(cmds[i_cmd]);
-//	}
+
+
 
 	holo_drive.spin_once_motors_control();
+
 }
 /* USER CODE END 0 */
 
@@ -210,7 +200,7 @@ int main(void)
   holo_drive = HolonomicDrive3(stepper0, stepper1, stepper2, 0.029, 0.175);
 
   ChampiCan champi_can = ChampiCan(&hfdcan1);
-  msg_recomposer_123 = MessageRecomposer();
+  msg_recomposer_cmd_vel = MessageRecomposer();
 
 
   if(champi_can.start() != 0) {
@@ -220,44 +210,17 @@ int main(void)
   set_loop_freq(100);
   HAL_TIM_Base_Start_IT(&htim6);
 
-  float sp = 0.5;
-
-  cmds[0] = {};
-  cmds[0].x = sp;
-  cmds[1] = {};
-  cmds[1].y = sp;
-  cmds[2] = {};
-  cmds[2].x = -sp;
-  cmds[3] = {};
-  cmds[3].y = -sp;
-
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  time_switch_cmd = 1000; //ms
-  i_cmd = 0;
-
-  last_time = HAL_GetTick();
-
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  char msg[4] = "abc";
-//      //if (champi_can.send_frame(0x123, TxData, 8) !=0)
-//	  if (champi_can.send_msg(0x123, (uint8_t*) msg, 3) !=0)
-//      {
-//        /* Transmission request Error */
-//    	  printf("ERROR: msg not sent\n");
-//    	  Error_Handler();
-//      }
-//
-//	  printf("msg sent\n");
-//	  HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }
