@@ -44,10 +44,10 @@ void abs(float* arr, float* ret) {
 }
 
 int get_index_max(float* arr) {
-	if(arr[0] > arr[1] && arr[0] > arr[2]) {
+	if(arr[0] >= arr[1] && arr[0] >= arr[2]) {
 		return 0;
 	}
-	else if(arr[1] > arr[0] && arr[1] > arr[2]) {
+	else if(arr[1] >= arr[0] && arr[1] >= arr[2]) {
 		return 1;
 	}
 	else {
@@ -72,13 +72,18 @@ void HolonomicDrive3::set_cmd_vel(Vel cmd) {
 }
 
 void HolonomicDrive3::compute_wheels_speeds(Vel cmd, float *ret_speeds_rps) {
-    float wheel0_mps = 0.5 * this->cmd_vel.x - SQRT_3_OVER_2 * this->cmd_vel.y - this->wheel_distance * this->cmd_vel.theta * PI / 180.0;
-    float wheel1_mps = 0.5 * this->cmd_vel.x + SQRT_3_OVER_2 * this->cmd_vel.y - this->wheel_distance * this->cmd_vel.theta * PI / 180.0;
-    float wheel2_mps = - this->cmd_vel.x + this->wheel_distance * this->cmd_vel.theta * PI / 180.0;
+    float wheel0_mps = 0.5 * this->cmd_vel.y - SQRT_3_OVER_2 * this->cmd_vel.x - this->wheel_distance * this->cmd_vel.theta;
+    float wheel1_mps = 0.5 * this->cmd_vel.y + SQRT_3_OVER_2 * this->cmd_vel.x - this->wheel_distance * this->cmd_vel.theta;
+    float wheel2_mps = - this->cmd_vel.y - this->wheel_distance * this->cmd_vel.theta;
     // wheel mps -> wheel rps
     ret_speeds_rps[0] = wheel0_mps / this->wheel_circumference;
     ret_speeds_rps[1] = wheel1_mps / this->wheel_circumference;
     ret_speeds_rps[2] = wheel2_mps / this->wheel_circumference;
+
+    if(ret_speeds_rps[2]!=ret_speeds_rps[2]) {
+    	ret_speeds_rps[2]--;
+    }
+
 }
 
 void HolonomicDrive3::write_wheels_speeds(float *speeds_rps) {
@@ -94,6 +99,10 @@ void HolonomicDrive3::spin_once_motors_control() {
 	float cmd_wheels_speeds[3]; // rotations per second
 	this->compute_wheels_speeds(cmd_vel, cmd_wheels_speeds);
 
+	if(this->current_wheels_speeds_rps[2] != this->current_wheels_speeds_rps[2]) {
+		this->current_wheels_speeds_rps[2]--;
+	}
+
 	float desired_accels_wheels[3];
 	sub(cmd_wheels_speeds, this->current_wheels_speeds_rps, desired_accels_wheels);
 
@@ -101,6 +110,7 @@ void HolonomicDrive3::spin_once_motors_control() {
 	abs(desired_accels_wheels, abs_desired_accels_wheels);
 	if(abs_desired_accels_wheels[0] < MAX_ACCEL_PER_CYCLE && abs_desired_accels_wheels[1] < MAX_ACCEL_PER_CYCLE && abs_desired_accels_wheels[2] < MAX_ACCEL_PER_CYCLE) {
 		// acceleration requested is ok, no need to accelerate gradually.
+
 		this->write_wheels_speeds(cmd_wheels_speeds);
 	}
 	else {

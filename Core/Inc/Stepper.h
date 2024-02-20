@@ -23,7 +23,7 @@ private:
 	GPIO_TypeDef *GPIOx_dir;
 	uint16_t GPIO_Pin_dir;
 	uint32_t tim_channel;
-	int current_freq;
+	bool stopped;
 	int current_dir;
 };
 

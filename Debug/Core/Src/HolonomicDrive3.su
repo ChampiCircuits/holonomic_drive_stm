@@ -7,8 +7,8 @@
 ../Core/Src/HolonomicDrive3.cpp:58:1:HolonomicDrive3::HolonomicDrive3(Stepper, Stepper, Stepper, float, float)	40	static
 ../Core/Src/HolonomicDrive3.cpp:70:6:void HolonomicDrive3::set_cmd_vel(Vel)	24	static
 ../Core/Src/HolonomicDrive3.cpp:74:6:void HolonomicDrive3::compute_wheels_speeds(Vel, float*)	56	static
-../Core/Src/HolonomicDrive3.cpp:84:6:void HolonomicDrive3::write_wheels_speeds(float*)	24	static
-../Core/Src/HolonomicDrive3.cpp:91:6:void HolonomicDrive3::spin_once_motors_control()	80	static
-../Core/Src/HolonomicDrive3.cpp:126:1:HolonomicDrive3::HolonomicDrive3()	24	static
-../Core/Src/HolonomicDrive3.cpp:129:1:HolonomicDrive3::~HolonomicDrive3()	24	static
-../Core/Src/HolonomicDrive3.cpp:129:1:virtual HolonomicDrive3::~HolonomicDrive3()	16	static
+../Core/Src/HolonomicDrive3.cpp:89:6:void HolonomicDrive3::write_wheels_speeds(float*)	24	static
+../Core/Src/HolonomicDrive3.cpp:96:6:void HolonomicDrive3::spin_once_motors_control()	80	static
+../Core/Src/HolonomicDrive3.cpp:136:1:HolonomicDrive3::HolonomicDrive3()	24	static
+../Core/Src/HolonomicDrive3.cpp:139:1:HolonomicDrive3::~HolonomicDrive3()	24	static
+../Core/Src/HolonomicDrive3.cpp:139:1:virtual HolonomicDrive3::~HolonomicDrive3()	16	static
