@@ -11,6 +11,8 @@
 #define SQRT_2_OVER_2 0.70710678118
 #define SQRT_3_OVER_2 0.86602540378
 
+#define SQRT_3_OVER_3 0.5773502692
+
 #define MAX_ACCEL_WHEEL 10.0 // rotation/s-2
 #define CONTROL_LOOP_FREQ_HZ 100. // Hz
 #define MAX_ACCEL_PER_CYCLE 0.1 // rotation/s/cycle
@@ -72,18 +74,13 @@ void HolonomicDrive3::set_cmd_vel(Vel cmd) {
 }
 
 void HolonomicDrive3::compute_wheels_speeds(Vel cmd, float *ret_speeds_rps) {
-    float wheel0_mps = 0.5 * this->cmd_vel.y - SQRT_3_OVER_2 * this->cmd_vel.x - this->wheel_distance * this->cmd_vel.theta;
-    float wheel1_mps = 0.5 * this->cmd_vel.y + SQRT_3_OVER_2 * this->cmd_vel.x - this->wheel_distance * this->cmd_vel.theta;
-    float wheel2_mps = - this->cmd_vel.y - this->wheel_distance * this->cmd_vel.theta;
+    float wheel0_mps = 0.5 * this->cmd_vel.y + SQRT_3_OVER_2 * this->cmd_vel.x + this->wheel_distance * this->cmd_vel.theta;
+    float wheel1_mps = 0.5 * this->cmd_vel.y - SQRT_3_OVER_2 * this->cmd_vel.x + this->wheel_distance * this->cmd_vel.theta;
+    float wheel2_mps = - this->cmd_vel.y + this->wheel_distance * this->cmd_vel.theta;
     // wheel mps -> wheel rps
     ret_speeds_rps[0] = wheel0_mps / this->wheel_circumference;
     ret_speeds_rps[1] = wheel1_mps / this->wheel_circumference;
     ret_speeds_rps[2] = wheel2_mps / this->wheel_circumference;
-
-    if(ret_speeds_rps[2]!=ret_speeds_rps[2]) {
-    	ret_speeds_rps[2]--;
-    }
-
 }
 
 void HolonomicDrive3::write_wheels_speeds(float *speeds_rps) {
@@ -122,21 +119,38 @@ void HolonomicDrive3::spin_once_motors_control() {
 
 		float new_speeds_cmds[3];
 		for(int i=0; i<3; i++) {
-			new_speeds_cmds[i] = current_wheels_speeds_rps[i] + speed_ratio * desired_accels_wheels[i];;
+			new_speeds_cmds[i] = current_wheels_speeds_rps[i] + speed_ratio * desired_accels_wheels[i];
 		}
 
 		// set speed
 		this->write_wheels_speeds(new_speeds_cmds);
-
-
 	}
 
+	// Compute / update current vel (linear / angular)
+	update_current_vel(this->current_wheels_speeds_rps);
+
+
+}
+
+Vel HolonomicDrive3::get_current_vel() {
+	return this->current_vel;
 }
 
 HolonomicDrive3::HolonomicDrive3() {
 }
 
+void HolonomicDrive3::update_current_vel(float* speeds_rps) {
+	float wheel0_mps = speeds_rps[0] * this->wheel_circumference;
+	float wheel1_mps = speeds_rps[1] * this->wheel_circumference;
+	float wheel2_mps = speeds_rps[2] * this->wheel_circumference;
+
+	this->current_vel.x = SQRT_3_OVER_3 * (wheel0_mps - wheel1_mps);
+	this->current_vel.y = (1./3.) * (wheel0_mps + wheel1_mps) - (2./3.) * wheel2_mps;
+	this->current_vel.theta = (1./(3.*wheel_distance)) * (wheel0_mps + wheel1_mps + wheel2_mps);
+}
+
 HolonomicDrive3::~HolonomicDrive3() {
 	// TODO Auto-generated destructor stub
 }
+
 

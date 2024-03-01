@@ -12,6 +12,7 @@
 
 class ChampiCan {
 public:
+	ChampiCan();
 	ChampiCan(FDCAN_HandleTypeDef *handle_fdcan);
 	int start();
 	int send_frame(uint32_t id, uint8_t *frame_data, uint32_t size);

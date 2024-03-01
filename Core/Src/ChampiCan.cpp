@@ -25,6 +25,9 @@ ChampiCan::ChampiCan(FDCAN_HandleTypeDef *handle_fdcan) {
 
 }
 
+ChampiCan::ChampiCan() {
+}
+
 int ChampiCan::start() {
 	/* Start the FDCAN module */
 	if (HAL_FDCAN_Start(handle_fdcan_) != HAL_OK)

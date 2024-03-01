@@ -25,6 +25,8 @@ public:
 	void write_wheels_speeds(float* speeds_rps);
 	void compute_wheels_speeds(Vel cmd, float* ret_speeds_rps);
 	void spin_once_motors_control();
+	Vel get_current_vel();
+	void update_current_vel(float* speeds_rps);
 	virtual ~HolonomicDrive3();
 private:
 	Stepper steppers[3];
@@ -32,6 +34,7 @@ private:
 	float wheel_distance;
 	Vel cmd_vel;
 	float current_wheels_speeds_rps[3];
+	Vel current_vel;
 
 };
 

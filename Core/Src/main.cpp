@@ -62,7 +62,11 @@ Stepper stepper1;
 Stepper stepper2;
 
 HolonomicDrive3 holo_drive;
+
+ChampiCan champi_can;
 MessageRecomposer msg_recomposer_cmd_vel;
+
+uint8_t buffer_encode_tx_vel[30]; // todo 30, c'est large, on peut peut-être réduire.
 
 /* USER CODE END PV */
 
@@ -77,6 +81,7 @@ static void MX_TIM15_Init(void);
 /* USER CODE BEGIN PFP */
 void loop();
 void on_receive_cmd_vel(std::string proto_msg);
+void transmit_vel(Vel vel);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -145,6 +150,38 @@ void on_receive_cmd_vel(std::string proto_msg) {
 	holo_drive.set_cmd_vel(cmd_vel);
 }
 
+void transmit_vel(Vel vel) {
+
+	// Init message
+	msgs_can_BaseVel vel_proto = msgs_can_BaseVel_init_zero;
+	pb_ostream_t stream = pb_ostream_from_buffer(buffer_encode_tx_vel, sizeof(buffer_encode_tx_vel));
+
+	// Fill message
+	vel_proto.x = vel.x;
+	vel_proto.y = vel.y;
+	vel_proto.theta = vel.theta;
+	vel_proto.has_x = true;
+	vel_proto.has_y = true;
+	vel_proto.has_theta = true;
+
+	// Encode message
+	bool status = pb_encode(&stream, msgs_can_BaseVel_fields, &vel_proto);
+	size_t message_length = stream.bytes_written;
+
+	// Check for errors
+	if (!status)  {
+		printf("Encoding failed: %s\n", PB_GET_ERROR(&stream));
+		Error_Handler();
+	}
+
+	// Send
+	if (champi_can.send_msg(0x11, (uint8_t*) buffer_encode_tx_vel, message_length) !=0) {
+	/* Transmission request Error */
+		printf("ERROR: msg not sent\n");
+		Error_Handler();
+	}
+}
+
 void set_loop_freq(int hz) {
 	htim6.Instance->ARR = SYS_CORE_CLOCK_HZ / (htim6.Instance->PSC+1) / hz;
 }
@@ -154,6 +191,8 @@ void loop() {
 
 
 	holo_drive.spin_once_motors_control();
+
+	transmit_vel(holo_drive.get_current_vel());
 
 }
 /* USER CODE END 0 */
@@ -199,7 +238,7 @@ int main(void)
 
   holo_drive = HolonomicDrive3(stepper0, stepper1, stepper2, 0.029, 0.175);
 
-  ChampiCan champi_can = ChampiCan(&hfdcan1);
+  champi_can = ChampiCan(&hfdcan1);
   msg_recomposer_cmd_vel = MessageRecomposer();
 
 
