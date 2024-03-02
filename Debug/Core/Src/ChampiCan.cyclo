@@ -1,0 +1,8 @@
+../Core/Src/ChampiCan.cpp:13:1:ChampiCan::ChampiCan(FDCAN_HandleTypeDef*)	1
+../Core/Src/ChampiCan.cpp:27:1:ChampiCan::ChampiCan()	1
+../Core/Src/ChampiCan.cpp:29:5:int ChampiCan::start()	3
+../Core/Src/ChampiCan.cpp:42:5:int ChampiCan::stop()	3
+../Core/Src/ChampiCan.cpp:55:5:int ChampiCan::send_frame(uint32_t, uint8_t*, uint32_t)	4
+../Core/Src/ChampiCan.cpp:84:5:int ChampiCan::send_msg(uint32_t, uint8_t*, uint32_t)	6
+../Core/Src/ChampiCan.cpp:123:1:ChampiCan::~ChampiCan()	1
+../Core/Src/ChampiCan.cpp:123:1:virtual ChampiCan::~ChampiCan()	1
