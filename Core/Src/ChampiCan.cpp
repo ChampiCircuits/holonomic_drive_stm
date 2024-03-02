@@ -8,7 +8,6 @@
 #include <ChampiCan.h>
 
 #include "stdio.h"
-
 #include <string.h>
 
 ChampiCan::ChampiCan(FDCAN_HandleTypeDef *handle_fdcan) {
@@ -25,8 +24,7 @@ ChampiCan::ChampiCan(FDCAN_HandleTypeDef *handle_fdcan) {
 
 }
 
-ChampiCan::ChampiCan() {
-}
+ChampiCan::ChampiCan() = default;
 
 int ChampiCan::start() {
 	/* Start the FDCAN module */
@@ -41,16 +39,45 @@ int ChampiCan::start() {
 	return 0;
 }
 
+int ChampiCan::stop() {
+    /* Stop the FDCAN module */
+    int ret = 0;
+    if (HAL_FDCAN_DeactivateNotification(handle_fdcan_, FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != HAL_OK)
+    {
+        ret = 1;
+    }
+    if (HAL_FDCAN_Stop(handle_fdcan_) != HAL_OK)
+    {
+        ret = 1;
+    }
+    return ret;
+}
 int ChampiCan::send_frame(uint32_t id, uint8_t *frame_data, uint32_t size) {
 	tx_header_.Identifier = id;
 	tx_header_.DataLength = size;
 
-    if (HAL_FDCAN_AddMessageToTxFifoQ(handle_fdcan_, &tx_header_, frame_data) != HAL_OK)
-    {
-      /* Transmission request Error */
-  	  printf("ERROR: Frame not sent\n");
-  	  return 1;
+    int ret = HAL_FDCAN_AddMessageToTxFifoQ(handle_fdcan_, &tx_header_, frame_data);
+
+    if (ret == HAL_OK) {
+        return 0;
     }
+
+    /* We got an error, try again until it works. Also blink the LED at 2Hz */
+    // Get led value to restore it after the loop
+    GPIO_PinState led_state = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
+
+    unsigned long last_time = HAL_GetTick();
+    while(ret != HAL_OK) {
+        ret = HAL_FDCAN_AddMessageToTxFifoQ(handle_fdcan_, &tx_header_, frame_data);
+        HAL_Delay(5);
+        unsigned long now = HAL_GetTick();
+        if(now - last_time > 500) {
+              last_time = now;
+            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_8); // The built-in LED
+        }
+    }
+    // Restore the LED state
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, led_state);
     return 0;
 }
 
@@ -93,7 +120,5 @@ int ChampiCan::send_msg(uint32_t id, uint8_t *msg, uint32_t msg_size) {
 }
 
 
-ChampiCan::~ChampiCan() {
-	// TODO Auto-generated destructor stub
-}
+ChampiCan::~ChampiCan() = default;
 

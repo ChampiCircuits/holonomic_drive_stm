@@ -13,15 +13,18 @@
 class ChampiCan {
 public:
 	ChampiCan();
-	ChampiCan(FDCAN_HandleTypeDef *handle_fdcan);
+	explicit ChampiCan(FDCAN_HandleTypeDef *handle_fdcan);
 	int start();
+    int stop();
 	int send_frame(uint32_t id, uint8_t *frame_data, uint32_t size);
 	int send_msg(uint32_t id, uint8_t *msg, uint32_t size);
 	virtual ~ChampiCan();
 
 private:
-	FDCAN_HandleTypeDef *handle_fdcan_;
-	FDCAN_TxHeaderTypeDef tx_header_;
+	FDCAN_HandleTypeDef *handle_fdcan_{};
+	FDCAN_TxHeaderTypeDef tx_header_{};
+
+
 };
 
 

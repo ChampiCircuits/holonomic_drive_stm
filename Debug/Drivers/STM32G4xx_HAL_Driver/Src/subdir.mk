@@ -22,24 +22,6 @@ C_SRCS += \
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.c \
 ../Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.c 
 
-C_DEPS += \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.d \
-./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.d 
-
 OBJS += \
 ./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.o \
 ./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.o \
@@ -57,6 +39,24 @@ OBJS += \
 ./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.o \
 ./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.o \
 ./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.o 
+
+C_DEPS += \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_cortex.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_dma_ex.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_exti.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_fdcan.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ex.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_flash_ramfunc.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_gpio.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_pwr_ex.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc_ex.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim.d \
+./Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_tim_ex.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

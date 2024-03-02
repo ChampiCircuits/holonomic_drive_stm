@@ -28,13 +28,13 @@ Vel sub(Vel vel1, Vel vel2) {
 	return {vel1.x - vel2.x, vel1.y - vel2.y, vel1.theta - vel2.theta};
 }
 
-void sub(float* arr1, float* arr2, float* ret) {
+void sub(const float* arr1, const float* arr2, float* ret) {
 	for(int i=0; i<3; i++) {
 		ret[i] = arr1[i] - arr2[i];
 	}
 }
 
-void abs(float* arr, float* ret) {
+void abs(const float* arr, float* ret) {
 	for(int i=0; i<3; i++) {
 		if(arr[i]>=0) {
 			ret[i] = arr[i];
@@ -45,7 +45,7 @@ void abs(float* arr, float* ret) {
 	}
 }
 
-int get_index_max(float* arr) {
+int get_index_max(const float* arr) {
 	if(arr[0] >= arr[1] && arr[0] >= arr[2]) {
 		return 0;
 	}
@@ -57,7 +57,7 @@ int get_index_max(float* arr) {
 	}
 }
 
-HolonomicDrive3::HolonomicDrive3(Stepper stepper0, Stepper stepper1, Stepper stepper2, float wheel_radius, float wheel_distance) {
+HolonomicDrive3::HolonomicDrive3(const Stepper& stepper0, const Stepper& stepper1, const Stepper& stepper2, double wheel_radius, float wheel_distance) {
 	this->steppers[0] = stepper0;
 	this->steppers[1] = stepper1;
 	this->steppers[2] = stepper2;
@@ -139,7 +139,7 @@ Vel HolonomicDrive3::get_current_vel() {
 HolonomicDrive3::HolonomicDrive3() {
 }
 
-void HolonomicDrive3::update_current_vel(float* speeds_rps) {
+void HolonomicDrive3::update_current_vel(const float* speeds_rps) {
 	float wheel0_mps = speeds_rps[0] * this->wheel_circumference;
 	float wheel1_mps = speeds_rps[1] * this->wheel_circumference;
 	float wheel2_mps = speeds_rps[2] * this->wheel_circumference;

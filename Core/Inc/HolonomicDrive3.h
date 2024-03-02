@@ -20,13 +20,13 @@ struct Vel {
 class HolonomicDrive3 {
 public:
 	HolonomicDrive3();
-	HolonomicDrive3(Stepper stepper0, Stepper stepper1, Stepper stepper2, float wheel_radius, float wheel_distance);
+	HolonomicDrive3(const Stepper& stepper0, const Stepper& stepper1, const Stepper& stepper2, double wheel_radius, float wheel_distance);
 	void set_cmd_vel(Vel cmd);
 	void write_wheels_speeds(float* speeds_rps);
 	void compute_wheels_speeds(Vel cmd, float* ret_speeds_rps);
 	void spin_once_motors_control();
 	Vel get_current_vel();
-	void update_current_vel(float* speeds_rps);
+	void update_current_vel(const float* speeds_rps);
 	virtual ~HolonomicDrive3();
 private:
 	Stepper steppers[3];

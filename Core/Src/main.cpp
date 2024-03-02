@@ -30,6 +30,7 @@
 #include <pb_encode.h>
 #include <pb_decode.h>
 #include "msgs_can.pb.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -80,7 +81,7 @@ static void MX_FDCAN1_Init(void);
 static void MX_TIM15_Init(void);
 /* USER CODE BEGIN PFP */
 void loop();
-void on_receive_cmd_vel(std::string proto_msg);
+void on_receive_cmd_vel(const std::string& proto_msg);
 void transmit_vel(Vel vel);
 /* USER CODE END PFP */
 
@@ -92,7 +93,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
     if(htim->Instance == TIM6) {
     	loop();
     }
-
 }
 
 /**
@@ -133,7 +133,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 	}
 }
 
-void on_receive_cmd_vel(std::string proto_msg) {
+void on_receive_cmd_vel(const std::string& proto_msg) {
 
 	// Allocate space for the decoded message.
 	msgs_can_BaseVel ret_cmd_vel = msgs_can_BaseVel_init_zero;
@@ -188,13 +188,38 @@ void set_loop_freq(int hz) {
 
 void loop() {
 
-
-
 	holo_drive.spin_once_motors_control();
 
 	transmit_vel(holo_drive.get_current_vel());
 
 }
+
+
+// ===================== ERROR HANDLERS =====================
+/**
+ * @brief Error handler for the CAN initialization : if the CAN initialization fails, the LED will blink 1Hz.
+ * The function will block until the CAN initialization is successful, trying to stop / start the CAN peripheral
+ * every 1s.
+ */
+void error_handler_can_init() {
+    bool can_init_ok = false;
+    while (!can_init_ok) {
+        //champi_can.stop();
+        HAL_Delay(1000);
+        HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin);
+        if (champi_can.start() == 0) {
+            can_init_ok = true;
+            // Turn off the LED
+            HAL_GPIO_WritePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin, GPIO_PIN_RESET);
+        }
+    }
+}
+
+
+void error_handler_pb_decode() {
+    // TODO
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -243,7 +268,13 @@ int main(void)
 
 
   if(champi_can.start() != 0) {
-	  Error_Handler();
+      /* TODO: Il semble qu'on ait jamais rencontré cette erreur, donc d'une part on ne peut pas teste
+       * cette fonction, et d'autre part, réagir à cette erreur, c'est peut être la rendre inaperçue.
+       * Pour l'instant, on appelle l'error handler par défaut, et peut être à la coupe, on mettra lui en plus
+       * vu que de toute facon ce sera plus trop le temps de deboguer
+      */
+	  //error_handler_can_init();
+      Error_Handler();
   }
 
   set_loop_freq(100);
@@ -639,6 +670,9 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4|GPIO_PIN_7, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin, GPIO_PIN_RESET);
+
   /*Configure GPIO pins : PA0 PA1 PA4 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -652,6 +686,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : Built_in_LED_GREEN_Pin */
+  GPIO_InitStruct.Pin = Built_in_LED_GREEN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(Built_in_LED_GREEN_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -672,6 +713,9 @@ void Error_Handler(void)
   __disable_irq();
   while (true)
   {
+      // Blink 1Hz
+      HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin);
+      HAL_Delay(1000);
   }
   /* USER CODE END Error_Handler_Debug */
 }
