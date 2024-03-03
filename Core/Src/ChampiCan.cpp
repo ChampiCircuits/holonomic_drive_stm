@@ -65,30 +65,7 @@ int ChampiCan::send_frame(uint32_t id, uint8_t *frame_data, uint32_t size) {
         ret = HAL_FDCAN_GetTxFifoFreeLevel(handle_fdcan_);
     }
 
-    ret = HAL_FDCAN_AddMessageToTxFifoQ(handle_fdcan_, &tx_header_, frame_data);
-
-    if (ret == HAL_OK) {
-        return 0;
-    }
-
-    // TODO à déplacer dans le main. Ici on l'oublie. Et aussi, vériifier la fifo avant d'envoyer.
-    /* We got an error, try again until it works. Also blink the LED at 2Hz */
-    // Get led value to restore it after the loop
-    GPIO_PinState led_state = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
-
-    unsigned long last_time = HAL_GetTick();
-    while(ret != HAL_OK) {
-        ret = HAL_FDCAN_AddMessageToTxFifoQ(handle_fdcan_, &tx_header_, frame_data);
-        HAL_Delay(1);
-        unsigned long now = HAL_GetTick();
-        if(now - last_time > 500) {
-              last_time = now;
-            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_8); // The built-in LED
-        }
-    }
-    // Restore the LED state
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, led_state);
-    return 1; // Means we had to retry. Used for logging.
+    return HAL_FDCAN_AddMessageToTxFifoQ(handle_fdcan_, &tx_header_, frame_data);
 }
 
 int ChampiCan::send_msg(uint32_t id, uint8_t *msg, uint32_t msg_size) {
@@ -123,9 +100,7 @@ int ChampiCan::send_msg(uint32_t id, uint8_t *msg, uint32_t msg_size) {
 			return 1;
 		}
 	}
-
     msg_number = (msg_number + 1) % 4;
-
     return 0;
 }
 

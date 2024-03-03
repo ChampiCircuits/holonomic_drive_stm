@@ -251,7 +251,7 @@ void transmit_vel(Vel vel) {
     // Send
     if (champi_can.send_msg(can_ids::BASE_CURRENT_VEL, (uint8_t *) buffer_encode_tx_vel, message_length) != 0) {
         /* Transmission request Error */
-        Error_Handler();
+        Error_Handler(); // TODO replace by wait_tx_ok, but for now it's better to know if an error occurs
     }
 }
 
@@ -297,6 +297,35 @@ void transmit_ret_config(msgs_can_BaseConfig ret_config) {
     }
 }
 
+/**
+ * @brief Fonction qui attend que le l'envoi de données sur le CAN fonctionne. Ca envoie un message de test
+ * à répétition jusqu'à ce que ça fonctionne.
+ * Also blinks the built-in LED at 2Hz.
+ * TODO replace BASE_TEST by status message ?
+ */
+void wait_tx_ok() {
+    uint8_t buff[3] = {0x01, 0x02, 0x03};
+
+    uint32_t ret = champi_can.send_msg(can_ids::BASE_TEST, (uint8_t *) buff, 3);
+
+    /* We got an error, try again until it works. Also blink the LED at 2Hz */
+    // Get led value to restore it after the loop
+    GPIO_PinState led_state = HAL_GPIO_ReadPin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin);
+
+    unsigned long last_time = HAL_GetTick();
+    while(ret != 0) {
+        ret = champi_can.send_msg(can_ids::BASE_TEST, (uint8_t *) buff, 3);
+        HAL_Delay(1);
+        unsigned long now = HAL_GetTick();
+        if(now - last_time > 500) {
+            last_time = now;
+            HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin); // The built-in LED
+        }
+    }
+    // Restore the LED state
+    HAL_GPIO_WritePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin, led_state);
+}
+
 
 
 // ===================================== SETUP AND LOOP ============================================
@@ -317,14 +346,13 @@ void setup() {
     msg_recomposer_config = MessageRecomposer();
 
     if (champi_can.start() != 0) {
-        /* TODO: Il semble qu'on ait jamais rencontré cette erreur, donc d'une part on ne peut pas tester
-         * error_handler_can_init, et d'autre part, réagir à cette erreur, c'est peut être la rendre inaperçue.
-         * Pour l'instant, on appelle l'error handler par défaut, et peut être à la coupe, on mettra lui en plus
-         * vu que de toute facon ce sera plus trop le temps de deboguer
-        */
-        //error_handler_can_init();
+        // TODO: On a jamais rencontré cette erreur.
         Error_Handler();
     }
+
+    // This is required: when the Raspberry Pi starts up, transmit CAN frames returns error.
+    // TODO vérifier que ça fonctionne.
+    wait_tx_ok();
 
 
     // Wait for the configuration message
@@ -347,28 +375,6 @@ void loop() {
     transmit_vel(holo_drive.get_current_vel());
 
 }
-
-
-// ===================== ERROR HANDLERS =====================
-/**
- * @brief Error handler for the CAN initialization : if the CAN initialization fails, the LED will blink 1Hz.
- * The function will block until the CAN initialization is successful, trying to stop / start the CAN peripheral
- * every 1s.
- */
-void error_handler_can_init() {
-    bool can_init_ok = false;
-    while (!can_init_ok) {
-        //champi_can.stop();
-        HAL_Delay(1000);
-        HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin);
-        if (champi_can.start() == 0) {
-            can_init_ok = true;
-            // Turn off the LED
-            HAL_GPIO_WritePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin, GPIO_PIN_RESET);
-        }
-    }
-}
-
 
 
 /* USER CODE END 0 */
