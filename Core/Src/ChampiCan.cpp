@@ -56,12 +56,22 @@ int ChampiCan::send_frame(uint32_t id, uint8_t *frame_data, uint32_t size) {
 	tx_header_.Identifier = id;
 	tx_header_.DataLength = size;
 
-    int ret = HAL_FDCAN_AddMessageToTxFifoQ(handle_fdcan_, &tx_header_, frame_data);
+    // D'abord, on attend que la FIFO ne soit plus pleine. J'ai eu des problèmes en essayant d'envoyer 5 frames d'un coup.
+    // En regardant la doc, j'ai vu que la fifo est de 4 en effet. TODO à approfondir.
+    // Je mets un timeout de 50ms. C'est petit exprès pour voir si on a encore des problèmes après.
+    uint32_t ret = HAL_FDCAN_GetTxFifoFreeLevel(handle_fdcan_);
+    uint32_t start_waiting = HAL_GetTick();
+    while (start_waiting + 50 > HAL_GetTick() && ret == 0) {
+        ret = HAL_FDCAN_GetTxFifoFreeLevel(handle_fdcan_);
+    }
+
+    ret = HAL_FDCAN_AddMessageToTxFifoQ(handle_fdcan_, &tx_header_, frame_data);
 
     if (ret == HAL_OK) {
         return 0;
     }
 
+    // TODO à déplacer dans le main. Ici on l'oublie. Et aussi, vériifier la fifo avant d'envoyer.
     /* We got an error, try again until it works. Also blink the LED at 2Hz */
     // Get led value to restore it after the loop
     GPIO_PinState led_state = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
