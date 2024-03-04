@@ -1,4 +1,5 @@
 "./Core/Src/ChampiCan.o"
+"./Core/Src/ChampiState.o"
 "./Core/Src/HolonomicDrive3.o"
 "./Core/Src/MessageRecomposer.o"
 "./Core/Src/Stepper.o"

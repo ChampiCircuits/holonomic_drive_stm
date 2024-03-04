@@ -26,6 +26,8 @@
 #include "MessageRecomposer.h"
 #include "ChampiCan.h"
 
+#include "ChampiState.h"
+
 #include <pb_encode.h>
 #include <pb_decode.h>
 #include "msgs_can.pb.h"
@@ -68,8 +70,15 @@ ChampiCan champi_can;
 MessageRecomposer msg_recomposer_cmd_vel;
 MessageRecomposer msg_recomposer_config;
 
+ChampiState champi_state;
+
 // On le déclare ici au contraire des autres buffers, car il va servir tout le temps.
 uint8_t buffer_encode_tx_vel[30]; // todo 30, c'est large, on peut peut-être réduire.
+
+bool new_config_received = false;
+uint32_t time_last_cmd_vel = -1; // ms
+uint32_t cmd_vel_timeout; // ms/ set by the configuration message
+#define CMD_VEL_TIMEOUT_MAX 1000 // ms. Used to avoid a too long timeout (bad configuration)
 
 /* USER CODE END PV */
 
@@ -100,6 +109,12 @@ void transmit_vel(Vel vel);
 void on_receive_config(const std::string &proto_msg);
 
 void transmit_ret_config(msgs_can_BaseConfig ret_config);
+
+void Error_Handler_CAN_ok();
+
+void wait_tx_ok();
+
+void set_loop_freq(int hz);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -120,9 +135,6 @@ void transmit_ret_config(msgs_can_BaseConfig ret_config);
 void set_loop_freq(int hz) {
     htim6.Instance->ARR = SYS_CORE_CLOCK_HZ / (htim6.Instance->PSC + 1) / hz;
 }
-
-
-
 
 
 
@@ -160,8 +172,8 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
         uint8_t RxData[8];
 
         if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK) {
-            printf("error rx\n");
-            Error_Handler();
+            champi_state.report_status(msgs_can_Status_StatusType_ERROR, msgs_can_Status_ErrorType_CAN_RX);
+            Error_Handler_CAN_ok();
         }
         /* Handle Interesting messages
          * Pour le moment, on n'utilise pas de mutex ou de choses comme ça, donc il faut faire attention
@@ -169,7 +181,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
          * de 32 bits ou moins (pour que leur modification soit une opération atomique)
          * */
 
-        if (RxHeader.Identifier == can_ids::BASE_CMD_VEL) {
+        if (RxHeader.Identifier == CAN_ID_BASE_CMD_VEL) {
             msg_recomposer_cmd_vel.add_frame(RxData, RxHeader.DataLength);
 
             if (msg_recomposer_cmd_vel.check_if_new_full_msg()) {
@@ -178,13 +190,17 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
             }
         }
-        else if (RxHeader.Identifier == can_ids::BASE_SET_CONFIG) {
+        else if (RxHeader.Identifier == CAN_ID_BASE_SET_CONFIG) {
             msg_recomposer_config.add_frame(RxData, RxHeader.DataLength);
 
             if (msg_recomposer_config.check_if_new_full_msg()) {
                 std::string proto_msg = msg_recomposer_config.get_full_msg();
                 on_receive_config(proto_msg);
             }
+        }
+        else if (RxHeader.Identifier == CAN_ID_BASE_RESET) {
+            // reset. TODO améliorer ça pour ne plus avoir à reset
+            NVIC_SystemReset();
         }
     }
 }
@@ -211,13 +227,16 @@ void on_receive_cmd_vel(const std::string &proto_msg) {
     pb_istream_t stream_ret = pb_istream_from_buffer((const unsigned char *) proto_msg.c_str(), proto_msg.size());
     // Now we are ready to decode the message.
     if (!pb_decode(&stream_ret, msgs_can_BaseVel_fields, &ret_cmd_vel)) {
-        printf("Decoding failed: %s\n", PB_GET_ERROR(&stream_ret));
-        Error_Handler();
+        champi_state.report_status(msgs_can_Status_StatusType_ERROR, msgs_can_Status_ErrorType_PROTO_DECODE);
+        Error_Handler_CAN_ok();
     }
 
     // Use message
     Vel cmd_vel = {ret_cmd_vel.x, ret_cmd_vel.y, ret_cmd_vel.theta};
     holo_drive.set_cmd_vel(cmd_vel);
+
+    // Update time_last_cmd_vel
+    time_last_cmd_vel = HAL_GetTick();
 }
 
 /**
@@ -245,13 +264,15 @@ void transmit_vel(Vel vel) {
     // Check for errors
     if (!status) {
         // TODO on peut récupérer un message d'erreur avec PB_GET_ERROR(&stream))
-        Error_Handler();
+        champi_state.report_status(msgs_can_Status_StatusType_ERROR, msgs_can_Status_ErrorType_PROTO_ENCODE);
+        Error_Handler_CAN_ok();
     }
 
     // Send
-    if (champi_can.send_msg(can_ids::BASE_CURRENT_VEL, (uint8_t *) buffer_encode_tx_vel, message_length) != 0) {
+    if (champi_can.send_msg(CAN_ID_BASE_CURRENT_VEL, (uint8_t *) buffer_encode_tx_vel, message_length) != 0) {
         /* Transmission request Error */
-        Error_Handler(); // TODO replace by wait_tx_ok, but for now it's better to know if an error occurs
+        champi_state.report_status(msgs_can_Status_StatusType_ERROR, msgs_can_Status_ErrorType_CAN_TX);
+        Error_Handler_CAN_ok();
     }
 }
 
@@ -263,15 +284,22 @@ void on_receive_config(const std::string &proto_msg) {
     pb_istream_t stream_ret = pb_istream_from_buffer((const unsigned char *) proto_msg.c_str(), proto_msg.size());
     // Now we are ready to decode the message.
     if (!pb_decode(&stream_ret, msgs_can_BaseConfig_fields, &ret_config)) {
-        Error_Handler();
+        champi_state.report_status(msgs_can_Status_StatusType_ERROR, msgs_can_Status_ErrorType_PROTO_DECODE);
+        Error_Handler_CAN_ok();
     }
 
     // Check if the message is valid
     if (ret_config.has_base_radius && ret_config.has_wheel_radius && ret_config.has_max_accel && ret_config.has_cmd_vel_timeout) {
         // Set the configuration
         holo_drive.set_config(ret_config.max_accel, ret_config.wheel_radius, ret_config.base_radius);
+        cmd_vel_timeout = (uint32_t) (ret_config.cmd_vel_timeout * 1000.0); // s to ms
+        if (cmd_vel_timeout > CMD_VEL_TIMEOUT_MAX) {
+            cmd_vel_timeout = CMD_VEL_TIMEOUT_MAX;
+        }
         // Transmit it back to acknowledge the reception
         transmit_ret_config(ret_config);
+
+        new_config_received = true;
     }
 }
 
@@ -287,13 +315,14 @@ void transmit_ret_config(msgs_can_BaseConfig ret_config) {
     // Check for errors
     if (!status) {
         // TODO on peut récupérer un message d'erreur avec PB_GET_ERROR(&stream))
-        Error_Handler();
+        champi_state.report_status(msgs_can_Status_StatusType_ERROR, msgs_can_Status_ErrorType_PROTO_ENCODE);
+        Error_Handler_CAN_ok();
     }
 
     // Send
-    if (champi_can.send_msg(can_ids::BASE_RET_CONFIG, (uint8_t *) buff, message_length) != 0) {
-        /* Transmission request Error */
-        Error_Handler();
+    if (champi_can.send_msg(CAN_ID_BASE_RET_CONFIG, (uint8_t *) buff, message_length) != 0) {
+        champi_state.report_status(msgs_can_Status_StatusType_ERROR, msgs_can_Status_ErrorType_CAN_TX);
+        Error_Handler_CAN_ok();
     }
 }
 
@@ -304,9 +333,9 @@ void transmit_ret_config(msgs_can_BaseConfig ret_config) {
  * TODO replace BASE_TEST by status message ?
  */
 void wait_tx_ok() {
-    uint8_t buff[3] = {0x01, 0x02, 0x03};
+    uint8_t buff[20] = {0}; // We need a big message to fill the FIFO
 
-    uint32_t ret = champi_can.send_msg(can_ids::BASE_TEST, (uint8_t *) buff, 3);
+    uint32_t ret = champi_can.send_msg(CAN_ID_BASE_TEST, (uint8_t *) buff, 20);
 
     /* We got an error, try again until it works. Also blink the LED at 2Hz */
     // Get led value to restore it after the loop
@@ -314,7 +343,7 @@ void wait_tx_ok() {
 
     unsigned long last_time = HAL_GetTick();
     while(ret != 0) {
-        ret = champi_can.send_msg(can_ids::BASE_TEST, (uint8_t *) buff, 3);
+        ret = champi_can.send_msg(CAN_ID_BASE_TEST, (uint8_t *) buff, 3);
         HAL_Delay(1);
         unsigned long now = HAL_GetTick();
         if(now - last_time > 500) {
@@ -325,6 +354,33 @@ void wait_tx_ok() {
     // Restore the LED state
     HAL_GPIO_WritePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin, led_state);
 }
+
+/**
+ * @brief Error handler we call when CAN might still work.
+ * It blinks the built-in LED at 1Hz AND sends status on CAN bus.
+ */
+void Error_Handler_CAN_ok() {
+
+    // Stop robot
+    holo_drive.set_cmd_vel(Vel{0, 0, 0});
+
+    // Blink the built-in LED at 1Hz
+    uint32_t last_time = HAL_GetTick();
+    while (true) {
+        holo_drive.spin_once_motors_control(); // Stop the robot (respect acceleration limits)
+        champi_state.spin_once();
+        HAL_Delay(10); // 10ms required to match the main loop frequency (for control)
+
+        if (HAL_GetTick() - last_time > 500) {
+            last_time = HAL_GetTick();
+            HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin); // The built-in LED
+        }
+    }
+}
+
+
+
+
 
 
 
@@ -350,15 +406,24 @@ void setup() {
         Error_Handler();
     }
 
+    champi_state = ChampiState(&champi_can, 500);
+
     // This is required: when the Raspberry Pi starts up, transmit CAN frames returns error.
-    // TODO vérifier que ça fonctionne.
     wait_tx_ok();
 
+    champi_state.report_status(msgs_can_Status_StatusType_INIT, msgs_can_Status_ErrorType_NONE);
 
     // Wait for the configuration message
-    while (!holo_drive.is_configured()) {
+    while (!new_config_received) {
         HAL_Delay(100);
+        // Send status to the CAN bus regularly
+        champi_state.spin_once();
     }
+
+    // Switch led ON to indicate that the configuration is done
+    HAL_GPIO_WritePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin, GPIO_PIN_SET);
+
+    champi_state.report_status(msgs_can_Status_StatusType_OK, msgs_can_Status_ErrorType_NONE);
 
     // Ge got everything, start the main loop
     set_loop_freq(100);
@@ -370,10 +435,18 @@ void setup() {
  */
 void loop() {
 
+    // Check if the command velocity is too old
+    if (time_last_cmd_vel != -1 && (HAL_GetTick() - time_last_cmd_vel > cmd_vel_timeout)) {
+        // Report the error
+        champi_state.report_status(msgs_can_Status_StatusType_ERROR, msgs_can_Status_ErrorType_CMD_VEL_TIMEOUT);
+        Error_Handler_CAN_ok();
+    }
+
     holo_drive.spin_once_motors_control();
 
     transmit_vel(holo_drive.get_current_vel());
 
+    champi_state.spin_once();
 }
 
 

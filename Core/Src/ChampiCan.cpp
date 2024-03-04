@@ -5,10 +5,9 @@
  *      Author: arusso
  */
 
+#include <string.h>
 #include <ChampiCan.h>
 
-#include "stdio.h"
-#include <string.h>
 
 ChampiCan::ChampiCan(FDCAN_HandleTypeDef *handle_fdcan) {
 

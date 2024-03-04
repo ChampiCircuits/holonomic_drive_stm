@@ -1,24 +1,28 @@
 /opt/st/stm32cubeide_1.14.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.11.3.rel1.linux64_1.1.100.202309141235/tools/arm-none-eabi/include/c++/11.3.1/arm-none-eabi/thumb/v7e-m+fp/hard/bits/gthr-default.h:229:1:int __gthread_key_delete(__gthread_key_t)	16	static
-../Core/Src/main.cpp:91:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	16	static
-../Core/Src/main.cpp:106:6:void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef*, uint32_t)	88	static
-../Core/Src/main.cpp:136:6:void on_receive_cmd_vel(const string&)	80	static
-../Core/Src/main.cpp:153:6:void transmit_vel(Vel)	80	static
-../Core/Src/main.cpp:185:6:void set_loop_freq(int)	24	static
-../Core/Src/main.cpp:189:6:void loop()	24	static
-../Core/Src/main.cpp:204:6:void error_handler_can_init()	16	static
+../Core/Src/main.cpp:124:6:void set_loop_freq(int)	24	static
+../Core/Src/main.cpp:142:6:void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef*)	16	static
+../Core/Src/main.cpp:156:6:void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef*, uint32_t)	112	static
+../Core/Src/main.cpp:210:6:void on_receive_cmd_vel(const string&)	88	static
+../Core/Src/main.cpp:231:6:void transmit_vel(Vel)	88	static
+../Core/Src/main.cpp:262:6:void on_receive_config(const string&)	96	static
+../Core/Src/main.cpp:282:6:void transmit_ret_config(msgs_can_BaseConfig)	72	static
+../Core/Src/main.cpp:310:6:void wait_tx_ok()	32	static
 ../Core/Inc/Stepper.h:13:7:constexpr Stepper& Stepper::operator=(const Stepper&)	16	static
 ../Core/Inc/HolonomicDrive3.h:20:7:constexpr HolonomicDrive3& HolonomicDrive3::operator=(const HolonomicDrive3&)	32	static
 ../Core/Inc/ChampiCan.h:13:7:constexpr ChampiCan& ChampiCan::operator=(const ChampiCan&)	24	static
 ../Core/Inc/MessageRecomposer.h:19:7:MessageRecomposer& MessageRecomposer::operator=(const MessageRecomposer&)	32	static
-../Core/Src/main.cpp:226:5:int main()	1336	static
-../Core/Src/main.cpp:299:6:void SystemClock_Config()	88	static
-../Core/Src/main.cpp:346:13:void MX_FDCAN1_Init()	8	static
-../Core/Src/main.cpp:389:13:void MX_TIM1_Init()	120	static
-../Core/Src/main.cpp:471:13:void MX_TIM6_Init()	24	static
-../Core/Src/main.cpp:509:13:void MX_TIM8_Init()	120	static
-../Core/Src/main.cpp:591:13:void MX_TIM15_Init()	104	static
-../Core/Src/main.cpp:657:13:void MX_GPIO_Init()	40	static
-../Core/Src/main.cpp:706:6:void Error_Handler()	8	static,ignoring_inline_asm
-../Core/Src/main.cpp:718:1:void __static_initialization_and_destruction_0(int, int)	16	static
-../Core/Src/main.cpp:718:1:cpp)	8	static
-../Core/Src/main.cpp:718:1:cpp)	8	static
+../Core/Inc/ChampiState.h:19:7:constexpr ChampiState& ChampiState::operator=(const ChampiState&)	24	static
+../Core/Src/main.cpp:344:6:void setup()	2096	static
+../Core/Src/main.cpp:386:6:void loop()	32	static
+../Core/Src/main.cpp:402:5:int main()	8	static
+../Core/Src/main.cpp:452:6:void SystemClock_Config()	88	static
+../Core/Src/main.cpp:496:13:void MX_FDCAN1_Init()	8	static
+../Core/Src/main.cpp:537:13:void MX_TIM1_Init()	120	static
+../Core/Src/main.cpp:612:13:void MX_TIM6_Init()	24	static
+../Core/Src/main.cpp:647:13:void MX_TIM8_Init()	120	static
+../Core/Src/main.cpp:722:13:void MX_TIM15_Init()	104	static
+../Core/Src/main.cpp:783:13:void MX_GPIO_Init()	40	static
+../Core/Src/main.cpp:831:6:void Error_Handler()	8	static,ignoring_inline_asm
+../Core/Src/main.cpp:846:1:void __static_initialization_and_destruction_0(int, int)	16	static
+../Core/Src/main.cpp:846:1:cpp)	8	static
+../Core/Src/main.cpp:846:1:cpp)	8	static

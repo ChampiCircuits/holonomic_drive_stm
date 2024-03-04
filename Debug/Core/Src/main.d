@@ -29,8 +29,11 @@ Core/Src/main.o: ../Core/Src/main.cpp ../Core/Inc/main.h \
  ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal_tim_ex.h \
  ../Core/Inc/Stepper.h ../Core/Inc/HolonomicDrive3.h \
  ../Core/Inc/Stepper.h ../Core/Inc/MessageRecomposer.h \
- ../Core/Inc/ChampiCan.h ../Core/Inc/pb_encode.h ../Core/Inc/pb.h \
- ../Core/Inc/pb_decode.h ../Core/Inc/msgs_can.pb.h ../Core/Inc/pb.h
+ ../Core/Inc/ChampiCan.h ../Core/Inc/ChampiState.h \
+ ../Core/Inc/pb_encode.h ../Core/Inc/pb.h ../Core/Inc/msgs_can.pb.h \
+ ../Core/Inc/pb.h ../Core/Inc/ChampiCan.h ../Core/Inc/can_ids.hpp \
+ ../Core/Inc/pb_decode.h ../Core/Inc/msgs_can.pb.h \
+ ../Core/Inc/can_ids.hpp
 ../Core/Inc/main.h:
 ../Drivers/STM32G4xx_HAL_Driver/Inc/stm32g4xx_hal.h:
 ../Core/Inc/stm32g4xx_hal_conf.h:
@@ -65,8 +68,13 @@ Core/Src/main.o: ../Core/Src/main.cpp ../Core/Inc/main.h \
 ../Core/Inc/Stepper.h:
 ../Core/Inc/MessageRecomposer.h:
 ../Core/Inc/ChampiCan.h:
+../Core/Inc/ChampiState.h:
 ../Core/Inc/pb_encode.h:
 ../Core/Inc/pb.h:
-../Core/Inc/pb_decode.h:
 ../Core/Inc/msgs_can.pb.h:
 ../Core/Inc/pb.h:
+../Core/Inc/ChampiCan.h:
+../Core/Inc/can_ids.hpp:
+../Core/Inc/pb_decode.h:
+../Core/Inc/msgs_can.pb.h:
+../Core/Inc/can_ids.hpp:
