@@ -329,30 +329,30 @@ void transmit_ret_config(msgs_can_BaseConfig ret_config) {
 /**
  * @brief Fonction qui attend que le l'envoi de données sur le CAN fonctionne. Ca envoie un message de test
  * à répétition jusqu'à ce que ça fonctionne.
- * Also blinks the built-in LED at 2Hz.
+ * Also blinks the built-in LED at 5 Hz.
  * TODO replace BASE_TEST by status message ?
  */
 void wait_tx_ok() {
     uint8_t buff[20] = {0}; // We need a big message to fill the FIFO
 
+    // Send a message to test if the can bus works (at least 1 node up)
     uint32_t ret = champi_can.send_msg(CAN_ID_BASE_TEST, (uint8_t *) buff, 20);
 
-    /* We got an error, try again until it works. Also blink the LED at 2Hz */
-    // Get led value to restore it after the loop
-    GPIO_PinState led_state = HAL_GPIO_ReadPin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin);
-
-    unsigned long last_time = HAL_GetTick();
-    while(ret != 0) {
-        ret = champi_can.send_msg(CAN_ID_BASE_TEST, (uint8_t *) buff, 3);
-        HAL_Delay(1);
-        unsigned long now = HAL_GetTick();
-        if(now - last_time > 500) {
-            last_time = now;
-            HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin); // The built-in LED
-        }
+    if(ret==0){
+        return;
     }
-    // Restore the LED state
-    HAL_GPIO_WritePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin, led_state);
+
+    // If we get an error, retry doesn't work sometimes. So we reset the stm to try again. Also blink the led 10Hz
+
+    // blink the built-in LED for 1s
+    for (int i = 0; i < 10; i++) {
+        HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin);
+        HAL_Delay(100);
+    }
+
+    // Then reset the stm
+    NVIC_SystemReset();
+
 }
 
 /**
@@ -406,16 +406,17 @@ void setup() {
         Error_Handler();
     }
 
-    champi_state = ChampiState(&champi_can, 500);
-
     // This is required: when the Raspberry Pi starts up, transmit CAN frames returns error.
     wait_tx_ok();
 
+    champi_state = ChampiState(&champi_can, 500);
+
     champi_state.report_status(msgs_can_Status_StatusType_INIT, msgs_can_Status_ErrorType_NONE);
 
-    // Wait for the configuration message
+    // Wait for the configuration message (blink 5Hz)
     while (!new_config_received) {
-        HAL_Delay(100);
+        HAL_Delay(200);
+        HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin); // The built-in LED
         // Send status to the CAN bus regularly
         champi_state.spin_once();
     }
