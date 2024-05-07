@@ -13,6 +13,6 @@
 ../Core/Src/HolonomicDrive3.cpp:132:5:Vel HolonomicDrive3::get_current_vel()	72	static
 ../Core/Src/HolonomicDrive3.cpp:136:6:void HolonomicDrive3::update_current_vel(const double*)	48	static
 ../Core/Src/HolonomicDrive3.cpp:152:6:void HolonomicDrive3::set_config(double, double, double)	40	static
-../Core/Src/HolonomicDrive3.cpp:160:6:bool HolonomicDrive3::new_config_received()	16	static
+../Core/Src/HolonomicDrive3.cpp:160:6:bool HolonomicDrive3::is_configured()	16	static
 ../Core/Src/HolonomicDrive3.cpp:164:1:HolonomicDrive3::~HolonomicDrive3()	24	static
 ../Core/Src/HolonomicDrive3.cpp:164:1:virtual HolonomicDrive3::~HolonomicDrive3()	16	static
