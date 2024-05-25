@@ -38,9 +38,9 @@ void MessageRecomposer::add_frame(uint8_t *frame_data, uint8_t length) {
     frames_received_[frame_index] = true;
     msg_parts[frame_index] = std::string((char*)frame_data+2, length-2);
 
-    for(int i=0; i<n_frames_; i++) {
-    	printf("Frame %d received : %d\n", i, frames_received_[i]);
-    }
+//    for(int i=0; i<n_frames_; i++) {
+//    	printf("Frame %d received : %d\n", i, frames_received_[i]);
+//    }
 
     if(all_frames_received()) {
         printf("All frames received\n");

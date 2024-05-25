@@ -408,6 +408,7 @@ bool is_tirette_pulled() {
     GPIO_PinState current_state = HAL_GPIO_ReadPin(TIRETTE_GPIO_Port, TIRETTE_Pin);
 
     if (current_state == GPIO_PIN_SET && last_state == GPIO_PIN_RESET) {
+        last_state = current_state;
         return true;
     }
 
