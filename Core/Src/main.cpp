@@ -58,6 +58,7 @@ TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim8;
 TIM_HandleTypeDef htim15;
+TIM_HandleTypeDef htim17;
 
 /* USER CODE BEGIN PV */
 
@@ -91,6 +92,7 @@ static void MX_TIM8_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_FDCAN1_Init(void);
 static void MX_TIM15_Init(void);
+static void MX_TIM17_Init(void);
 /* USER CODE BEGIN PFP */
 void setup();
 
@@ -344,6 +346,11 @@ void wait_tx_ok() {
         HAL_Delay(100);
     }
 
+    // Beep
+    htim17.Instance->CCR1 = 1000;
+    HAL_Delay(200);
+    htim17.Instance->CCR1 = 0;
+
     // Then reset the stm
     NVIC_SystemReset();
 
@@ -367,6 +374,7 @@ void Error_Handler_CAN_ok() {
 
         if (HAL_GetTick() - last_time > 500) {
             last_time = HAL_GetTick();
+            htim17.Instance->CCR1 == 10000 ? htim17.Instance->CCR1 = 0 : htim17.Instance->CCR1 = 10000; // Beeper
             HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin); // The built-in LED
         }
     }
@@ -431,10 +439,13 @@ void send_can_tirette_pulled() {
 
 // ===================================== SETUP AND LOOP ============================================
 
+
 /**
  * @brief Setup function.
  */
 void setup() {
+
+    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
 
     stepper0 = Stepper(htim8, TIM_CHANNEL_1, GPIOA, GPIO_PIN_4);
     stepper1 = Stepper(htim1, TIM_CHANNEL_1, GPIOA, GPIO_PIN_0);
@@ -461,12 +472,14 @@ void setup() {
     // Wait for the configuration message (blink 5Hz)
     while (!new_config_received) {
         HAL_Delay(200);
+        htim17.Instance->CCR1 == 10000 ? htim17.Instance->CCR1 = 0 : htim17.Instance->CCR1 = 10000;  // beeper
         HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin); // The built-in LED
         // Send status to the CAN bus regularly
         champi_state.spin_once();
     }
 
     // Switch led ON to indicate that the configuration is done
+    htim17.Instance->CCR1 == 0; // Beeper
     HAL_GPIO_WritePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin, GPIO_PIN_SET);
 
     champi_state.report_status(msgs_can_Status_StatusType_OK, msgs_can_Status_ErrorType_NONE);
@@ -551,6 +564,7 @@ int main(void)
   MX_TIM6_Init();
   MX_FDCAN1_Init();
   MX_TIM15_Init();
+  MX_TIM17_Init();
   /* USER CODE BEGIN 2 */
 
     setup();
@@ -927,6 +941,69 @@ static void MX_TIM15_Init(void)
 }
 
 /**
+  * @brief TIM17 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM17_Init(void)
+{
+
+  /* USER CODE BEGIN TIM17_Init 0 */
+
+  /* USER CODE END TIM17_Init 0 */
+
+  TIM_OC_InitTypeDef sConfigOC = {0};
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
+
+  /* USER CODE BEGIN TIM17_Init 1 */
+
+  /* USER CODE END TIM17_Init 1 */
+  htim17.Instance = TIM17;
+  htim17.Init.Prescaler = 0;
+  htim17.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim17.Init.Period = 65535;
+  htim17.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim17.Init.RepetitionCounter = 0;
+  htim17.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim17) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim17) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(&htim17, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+  sBreakDeadTimeConfig.BreakFilter = 0;
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  if (HAL_TIMEx_ConfigBreakDeadTime(&htim17, &sBreakDeadTimeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM17_Init 2 */
+
+  /* USER CODE END TIM17_Init 2 */
+  HAL_TIM_MspPostInit(&htim17);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -999,6 +1076,7 @@ void Error_Handler(void)
     while (true) {
         // Blink 1Hz
         HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin);
+        htim17.Instance->CCR1 == 10000 ? htim17.Instance->CCR1 = 0 : htim17.Instance->CCR1 = 10000; // Beeper
         HAL_Delay(1000);
     }
   /* USER CODE END Error_Handler_Debug */
