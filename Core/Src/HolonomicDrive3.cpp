@@ -79,7 +79,7 @@ void HolonomicDrive3::compute_wheels_speeds(Vel cmd, double *ret_speeds_rps) {
 
 void HolonomicDrive3::write_wheels_speeds(double *speeds_rps) {
 	for(int i=0; i<3; i++) {
-		this->steppers[i].set_speed_rps(speeds_rps[i]);
+		this->steppers[i].set_speed_rot_per_s(speeds_rps[i]);
 		this->current_wheels_speeds_rps[i] = speeds_rps[i];
 	}
 }
