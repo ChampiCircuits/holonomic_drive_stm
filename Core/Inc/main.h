@@ -61,8 +61,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define EMERGENCY_STOP_Pin GPIO_PIN_0
 #define EMERGENCY_STOP_GPIO_Port GPIOB
-#define TIRETTE_Pin GPIO_PIN_7
-#define TIRETTE_GPIO_Port GPIOB
+#define TIRETTE_Pin GPIO_PIN_10
+#define TIRETTE_GPIO_Port GPIOA
 #define Built_in_LED_GREEN_Pin GPIO_PIN_8
 #define Built_in_LED_GREEN_GPIO_Port GPIOB
 

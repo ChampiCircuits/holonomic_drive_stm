@@ -28,7 +28,7 @@ void ChampiState::report_status(msgs_can_Status_StatusType status, msgs_can_Stat
         status_msg_.status = status;
         status_msg_.error = error;
 
-        send_status();
+//        send_status();
 
         // TODO on pourra ajouter le logging ici plus tard !
     }

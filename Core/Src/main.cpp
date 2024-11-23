@@ -34,6 +34,7 @@
 #include "msgs_can.pb.h"
 #include "can_ids.hpp"
 
+#include "CUSTOM_LIB_SPARKFUN.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,6 +54,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 FDCAN_HandleTypeDef hfdcan1;
+
+I2C_HandleTypeDef hi2c1;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim6;
@@ -74,6 +77,9 @@ MessageRecomposer msg_recomposer_config;
 
 ChampiState champi_state;
 
+QwiicOTOS myOtos(&hi2c1, 0x17);
+bool needTrackingSensorResetAndCalibration = true;
+
 // On le déclare ici au contraire des autres buffers, car il va servir tout le temps.
 uint8_t buffer_encode_tx_vel[30]; // todo 30, c'est large, on peut peut-être réduire.
 
@@ -90,9 +96,10 @@ static void MX_GPIO_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_TIM6_Init(void);
-static void MX_FDCAN1_Init(void);
 static void MX_TIM15_Init(void);
 static void MX_TIM17_Init(void);
+static void MX_FDCAN1_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 void setup();
 
@@ -115,10 +122,6 @@ void set_loop_freq(int hz);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-
-
-
 
 
 
@@ -198,6 +201,9 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
             // reset. TODO améliorer ça pour ne plus avoir à reset
             NVIC_SystemReset();
         }
+        else if (RxHeader.Identifier == CAN_ID_RESET_AND_CALIBRATE_TRACKING_SENSOR) {
+          needTrackingSensorResetAndCalibration = true;
+        }
     }
 }
 
@@ -266,6 +272,46 @@ void transmit_vel(Vel vel) {
 
     // Send
     if (champi_can.send_msg(CAN_ID_BASE_CURRENT_VEL, (uint8_t *) buffer_encode_tx_vel, message_length) != 0) {
+        /* Transmission request Error */
+        champi_state.report_status(msgs_can_Status_StatusType_ERROR, msgs_can_Status_ErrorType_CAN_TX);
+        Error_Handler_CAN_ok();
+    }
+}
+
+void transmitTrackingPoseAndStd(msgs_can_TrackingSensorData_StatusType status, Pose2D pose, Pose2D std) {
+    // Init message
+    msgs_can_TrackingSensorData tracking_data_proto = msgs_can_TrackingSensorData_init_zero;
+    uint8_t buff[60];
+    pb_ostream_t stream = pb_ostream_from_buffer(buff, sizeof(buff));
+
+    // Fill message
+    tracking_data_proto.status = status;
+    tracking_data_proto.pose_x_mm = pose.x;
+    tracking_data_proto.pose_y_mm = pose.y;
+    tracking_data_proto.theta_rad = pose.h;
+    tracking_data_proto.pose_x_std = std.x;
+    tracking_data_proto.pose_y_std = std.y;
+    tracking_data_proto.theta_std = std.h;
+    tracking_data_proto.has_status = true;
+    tracking_data_proto.has_pose_x_mm = true;
+    tracking_data_proto.has_pose_y_mm = true;
+    tracking_data_proto.has_theta_rad = true;
+    tracking_data_proto.has_pose_x_std = true;
+    tracking_data_proto.has_pose_y_std = true;
+    tracking_data_proto.has_theta_std = true;
+    // Encode message
+    bool ok = pb_encode(&stream, msgs_can_TrackingSensorData_fields, &tracking_data_proto);
+    size_t message_length = stream.bytes_written;
+
+    // Check for errors
+    if (!ok) {
+        // TODO on peut récupérer un message d'erreur avec PB_GET_ERROR(&stream))
+        champi_state.report_status(msgs_can_Status_StatusType_ERROR, msgs_can_Status_ErrorType_PROTO_ENCODE);
+        Error_Handler_CAN_ok();
+    }
+
+    // Send
+    if (champi_can.send_msg(CAN_ID_TRACKING_SENSOR_DATA, (uint8_t *) buff, message_length) != 0) {
         /* Transmission request Error */
         champi_state.report_status(msgs_can_Status_StatusType_ERROR, msgs_can_Status_ErrorType_CAN_TX);
         Error_Handler_CAN_ok();
@@ -444,8 +490,17 @@ void send_can_tirette_pulled() {
  * @brief Setup function.
  */
 void setup() {
+//    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
 
-    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+
+    while (!myOtos.isConnected()) {
+        HAL_Delay(1000);
+        // TODO update status
+//        htim17.Instance->CCR1 == 10000 ? htim17.Instance->CCR1 = 0 : htim17.Instance->CCR1 = 10000;  // beeper
+        HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin); // The built-in LED
+//        champi_state.spin_once();
+    }
+
 
     stepper0 = Stepper(htim8, TIM_CHANNEL_1, GPIOA, GPIO_PIN_4);
     stepper1 = Stepper(htim1, TIM_CHANNEL_1, GPIOA, GPIO_PIN_0);
@@ -478,13 +533,34 @@ void setup() {
         champi_state.spin_once();
     }
 
+    while (!myOtos.isConnected()) {
+        HAL_Delay(1000);
+        // TODO update status
+        htim17.Instance->CCR1 == 10000 ? htim17.Instance->CCR1 = 0 : htim17.Instance->CCR1 = 10000;  // beeper
+        HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin); // The built-in LED
+//        champi_state.spin_once();
+    }
+
+    bool ok = myOtos.selfTest();
+    if (! ok) {
+    	// ERROR WITH OTOS
+        transmitTrackingPoseAndStd(msgs_can_TrackingSensorData_StatusType::msgs_can_TrackingSensorData_StatusType_ERROR, Pose2D(), Pose2D()); // update status
+        HAL_Delay(1000000000); // TODO better
+    }
+
+    myOtos.setAngularScalar(1.07);
+    myOtos.setLinearScalar(0.992);
+
+    Pose2D offset = {0, 0.049844, -90};
+    myOtos.setOffset(offset);
+
     // Switch led ON to indicate that the configuration is done
     htim17.Instance->CCR1 == 0; // Beeper
     HAL_GPIO_WritePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin, GPIO_PIN_SET);
 
     champi_state.report_status(msgs_can_Status_StatusType_OK, msgs_can_Status_ErrorType_NONE);
 
-    // Ge got everything, start the main loop
+    // We got everything, start the main loop
     set_loop_freq(100);
     HAL_TIM_Base_Start_IT(&htim6);
 }
@@ -493,6 +569,21 @@ void setup() {
  * @brief Main loop.
  */
 void loop() {
+	if (needTrackingSensorResetAndCalibration)
+	{
+		myOtos.calibrateImu();
+		HAL_Delay(100);
+		myOtos.resetTracking();
+		HAL_Delay(100);
+		needTrackingSensorResetAndCalibration = false;
+	}
+
+	// Obtenir la position actuelle
+	Pose2D otosPose = myOtos.getPosition();
+	Pose2D otosStd = myOtos.getPositionStdDev();
+	transmitTrackingPoseAndStd(msgs_can_TrackingSensorData_StatusType::msgs_can_TrackingSensorData_StatusType_OK, otosPose, otosStd);
+	// TODO plutot transmit la pose à interval régulier, ou quand on recoit une nouvelle pose du capteur
+
 
     // Check if the command velocity is too old
     if (time_last_cmd_vel != -1 && (HAL_GetTick() - time_last_cmd_vel > cmd_vel_timeout)) {
@@ -537,6 +628,7 @@ void loop() {
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -562,9 +654,10 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM8_Init();
   MX_TIM6_Init();
-  MX_FDCAN1_Init();
   MX_TIM15_Init();
   MX_TIM17_Init();
+  MX_FDCAN1_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
     setup();
@@ -669,6 +762,54 @@ static void MX_FDCAN1_Init(void)
   /* USER CODE BEGIN FDCAN1_Init 2 */
 
   /* USER CODE END FDCAN1_Init 2 */
+
+}
+
+/**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x30A0A7FB;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Analogue filter
+  */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Digital filter
+  */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
 
 }
 
@@ -1038,11 +1179,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : EMERGENCY_STOP_Pin TIRETTE_Pin */
-  GPIO_InitStruct.Pin = EMERGENCY_STOP_Pin|TIRETTE_Pin;
+  /*Configure GPIO pin : EMERGENCY_STOP_Pin */
+  GPIO_InitStruct.Pin = EMERGENCY_STOP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(EMERGENCY_STOP_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : TIRETTE_Pin */
+  GPIO_InitStruct.Pin = TIRETTE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(TIRETTE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : Built_in_LED_GREEN_Pin */
   GPIO_InitStruct.Pin = Built_in_LED_GREEN_Pin;
