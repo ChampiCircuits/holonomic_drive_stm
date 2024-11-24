@@ -35,6 +35,10 @@
 #include "can_ids.hpp"
 
 #include "CUSTOM_LIB_SPARKFUN.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,7 +53,6 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -101,6 +104,18 @@ static void MX_TIM17_Init(void);
 static void MX_FDCAN1_Init(void);
 static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
+extern "C"
+{
+int _write(int file, char *ptr, int len)
+{
+   for (int DataIdx = 0; DataIdx < len; DataIdx++)
+//        ITM_SendChar(*ptr++);
+//   	HAL_UART_Transmit(&huart2, (uint8_t*)ptr++, 1, HAL_MAX_DELAY);
+   return len;
+}
+
+}
+
 void setup();
 
 void loop();
@@ -134,9 +149,6 @@ void set_loop_freq(int hz);
 void set_loop_freq(int hz) {
     htim6.Instance->ARR = SYS_CORE_CLOCK_HZ / (htim6.Instance->PSC + 1) / hz;
 }
-
-
-
 
 
 // ===================================== CALLBACKS =====================================
@@ -490,17 +502,15 @@ void send_can_tirette_pulled() {
  * @brief Setup function.
  */
 void setup() {
-//    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
-
+	printf("starting setup...\n");
+    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
 
     while (!myOtos.isConnected()) {
+    	printf("otos not connected\n");
         HAL_Delay(1000);
-        // TODO update status
-//        htim17.Instance->CCR1 == 10000 ? htim17.Instance->CCR1 = 0 : htim17.Instance->CCR1 = 10000;  // beeper
+        htim17.Instance->CCR1 == 10000 ? htim17.Instance->CCR1 = 0 : htim17.Instance->CCR1 = 10000;  // beeper
         HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin); // The built-in LED
-//        champi_state.spin_once();
     }
-
 
     stepper0 = Stepper(htim8, TIM_CHANNEL_1, GPIOA, GPIO_PIN_4);
     stepper1 = Stepper(htim1, TIM_CHANNEL_1, GPIOA, GPIO_PIN_0);
@@ -533,13 +543,6 @@ void setup() {
         champi_state.spin_once();
     }
 
-    while (!myOtos.isConnected()) {
-        HAL_Delay(1000);
-        // TODO update status
-        htim17.Instance->CCR1 == 10000 ? htim17.Instance->CCR1 = 0 : htim17.Instance->CCR1 = 10000;  // beeper
-        HAL_GPIO_TogglePin(Built_in_LED_GREEN_GPIO_Port, Built_in_LED_GREEN_Pin); // The built-in LED
-//        champi_state.spin_once();
-    }
 
     bool ok = myOtos.selfTest();
     if (! ok) {
@@ -551,7 +554,7 @@ void setup() {
     myOtos.setAngularScalar(1.07);
     myOtos.setLinearScalar(0.992);
 
-    Pose2D offset = {0, 0.049844, -90};
+    Pose2D offset = {0, 0.049844, -3.1415926/2};
     myOtos.setOffset(offset);
 
     // Switch led ON to indicate that the configuration is done
@@ -576,11 +579,18 @@ void loop() {
 		myOtos.resetTracking();
 		HAL_Delay(100);
 		needTrackingSensorResetAndCalibration = false;
+		printf("RESETTING TRACKING\n");
 	}
 
 	// Obtenir la position actuelle
 	Pose2D otosPose = myOtos.getPosition();
 	Pose2D otosStd = myOtos.getPositionStdDev();
+	printf("%d",(int)otosPose.x*1000);
+	printf("\t");
+	printf("%d",(int)otosPose.y*1000);
+	printf("\t");
+	printf("%d",(int)otosPose.h);
+	printf("\n");
 	transmitTrackingPoseAndStd(msgs_can_TrackingSensorData_StatusType::msgs_can_TrackingSensorData_StatusType_OK, otosPose, otosStd);
 	// TODO plutot transmit la pose à interval régulier, ou quand on recoit une nouvelle pose du capteur
 
@@ -1172,6 +1182,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : TIRETTE_Pin */
+  GPIO_InitStruct.Pin = TIRETTE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(TIRETTE_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : PA7 */
   GPIO_InitStruct.Pin = GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
@@ -1184,12 +1200,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(EMERGENCY_STOP_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : TIRETTE_Pin */
-  GPIO_InitStruct.Pin = TIRETTE_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(TIRETTE_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : Built_in_LED_GREEN_Pin */
   GPIO_InitStruct.Pin = Built_in_LED_GREEN_Pin;
