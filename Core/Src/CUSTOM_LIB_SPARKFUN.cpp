@@ -3,7 +3,7 @@
 #include <cstring>
 
 bool QwiicOTOS::isConnected() {
-	auto a = HAL_I2C_IsDeviceReady(hi2c_, address << 1, 3, HAL_MAX_DELAY);
+	auto a = HAL_I2C_IsDeviceReady(hi2c_, address << 1, 3, 1000);
     if (a != HAL_OK) {
         return false;
     }
